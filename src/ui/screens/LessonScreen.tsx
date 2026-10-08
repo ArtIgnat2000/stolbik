@@ -6,6 +6,7 @@ import type { ChildProfile } from '../../state/profile'
 import { ColumnDisplay } from '../components/ColumnDisplay'
 import { Keypad } from '../components/Keypad'
 import { Owl } from '../components/Owl'
+import { PlaceValueExplorer } from '../components/PlaceValueExplorer'
 
 interface LessonScreenProps {
   profile: ChildProfile
@@ -16,28 +17,45 @@ interface LessonScreenProps {
   onFinishLesson: (profileId: string, levelId: LevelId, cleanSolved: number, lessonSize: number, durationMs: number) => void
 }
 
-type LessonStage = 'intro' | 'demo' | 'practice' | 'finish'
+type LessonStage = 'intro' | 'warmup' | 'model' | 'demo' | 'practice' | 'finish'
+type ReflectionChoice = 'model' | 'help' | 'self-check'
+
+const WARMUP_QUESTIONS = [
+  {
+    prompt: 'В модели точка — это единица. Что показывает треугольник?',
+    options: ['Одну единицу', 'Десять единиц', 'Одну сотню'],
+    correctIndex: 1,
+    hint: 'Вспомни: десять точек можно объединить в один треугольник-десяток.'
+  },
+  {
+    prompt: 'Сколько десятков составляют одну сотню?',
+    options: ['1 десяток', '10 десятков', '100 десятков'],
+    correctIndex: 1,
+    hint: 'Сотня — это десять десятков; в модели это десять треугольников.'
+  }
+] as const
 
 function getPromptHint(step: ColumnStep, operation: 'add' | 'subtract'): string {
+  if (step.isFinalCarry) return `Перенесённую ${step.carryIn} запиши в разряд ${step.placeName}.`
   if (operation === 'add') {
     const carryNote = step.carryIn > 0 ? ` Не забудь прибавить ещё ${step.carryIn} перенесённую единицу.` : ''
-    return `Сколько будет ${step.aDigit} + ${step.bDigit}?${carryNote} Если единиц получится больше девяти, одну цифру пишем, а десяток переносим.`
+    return `Сколько будет ${step.aDigit} + ${step.bDigit}?${carryNote} Если единиц получится больше девяти, подумай, как сгруппировать их по разрядам.`
   }
-  if (step.aDigit < step.bDigit) {
-    return `Единиц пока не хватает. У какого ближайшего старшего разряда можно занять 1?${step.borrow && step.borrow.fromPlace > step.place + 1 ? ' Нули по пути превратятся в 9.' : ''}`
+  if (step.borrow) {
+    const zeroNote = step.borrow.fromPlace > step.place + 1 ? ' При размене каждый промежуточный ноль станет 9 в своём разряде.' : ''
+    return `В разряде ${step.placeName} пока ${step.originalADigit}, а нужно вычесть ${step.bDigit}. Какой ближайший старший разряд можно разменять?${zeroNote}`
   }
   return `Вычти ${step.bDigit} из ${step.aDigit} в разряде ${step.placeName}. Начинаем справа налево.`
 }
 
 function getFirstInstruction(operation: 'add' | 'subtract'): string {
   return operation === 'add'
-    ? 'Начинаем с единиц. Складываем цифры одного разряда; если сумма больше 9, младшую цифру пишем в ответ, а десяток переносим в следующий разряд.'
-    : 'Начинаем с единиц. Если цифры не хватает, занимаем 1 у ближайшего старшего разряда. Если между ними нули, они становятся 9.'
+    ? 'Сначала рассмотри единицы и десятки отдельно. Сколько единиц получится и можно ли все оставить в этом разряде?'
+    : 'Сначала рассмотри единицы. Хватит ли их, чтобы выполнить вычитание? Если нет, подумай, какой разряд может помочь.'
 }
 
-function describeStep(step: ColumnStep, operation: 'add' | 'subtract'): string {
-  if (step.isFinalCarry) return step.explanation
-  return operation === 'add' ? step.explanation : step.explanation
+function describeStep(step: ColumnStep): string {
+  return step.explanation
 }
 
 export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onRecordCorrect, onFinishLesson }: LessonScreenProps) {
@@ -45,6 +63,8 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
   const lessonSize = profile.settings.lessonSize
   const [stage, setStage] = useState<LessonStage>('intro')
   const [example, setExample] = useState(() => generateExample(levelId))
+  const [warmupIndex, setWarmupIndex] = useState(0)
+  const [warmupMessage, setWarmupMessage] = useState('')
   const [demoIndex, setDemoIndex] = useState(-1)
   const [questionNumber, setQuestionNumber] = useState(1)
   const [stepIndex, setStepIndex] = useState(0)
@@ -56,6 +76,8 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
   const [coachMessage, setCoachMessage] = useState('Я рядом. Сначала единицы, потом десятки!')
   const [showHintAnswer, setShowHintAnswer] = useState(false)
   const [questionComplete, setQuestionComplete] = useState(false)
+  const [selfCheckAck, setSelfCheckAck] = useState(false)
+  const [reflectionChoice, setReflectionChoice] = useState<ReflectionChoice | null>(null)
   const [interactionCount, setInteractionCount] = useState(0)
   const [cleanSolved, setCleanSolved] = useState(0)
   const [solvedCount, setSolvedCount] = useState(0)
@@ -100,8 +122,8 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
       onRecordMistake(profile.id, levelId)
       playFeedback('gentle-wrong', profile.settings.soundEnabled)
       vibrate(8, profile.settings.hapticsEnabled)
-      setErrorText(`${currentStep.explanation} Правильная цифра — ${currentStep.expectedDigit}. Попробуй вписать её сам.`)
-      setCoachMessage('Так бывает! Теперь мы знаем, какой шаг нужно проверить. Ты справишься 💛')
+      setErrorText(`${getPromptHint(currentStep, example.operation)} Проверь разрядную модель или попроси подсказку — правильный ответ не теряется.`)
+      setCoachMessage('Так бывает! Ошибка помогает заметить, что стоит проверить. Ты справишься 💛')
       return
     }
 
@@ -117,6 +139,7 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
     if (isLastStep) {
       const wasIndependent = mistakes === 0 && !hintUsed
       setQuestionComplete(true)
+      setSelfCheckAck(false)
       setSolvedCount((count) => count + 1)
       setCleanSolved((count) => count + (wasIndependent ? 1 : 0))
       onRecordCorrect(profile.id, levelId, wasIndependent, hintUsed)
@@ -174,6 +197,7 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
     setHintStage(0)
     setHintUsed(false)
     setQuestionComplete(false)
+    setSelfCheckAck(false)
     setErrorText(null)
     setStage('practice')
     setCoachMessage('Решаем справа налево. Ты можешь попросить подсказку в любой момент.')
@@ -198,12 +222,34 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
     setHintStage(0)
     setHintUsed(false)
     setQuestionComplete(false)
+    setSelfCheckAck(false)
     setErrorText(null)
     setShowHintAnswer(false)
     setCoachMessage('Новый пример — новый шанс потренироваться!')
   }
 
-  const startDemo = () => {
+  const startModel = () => {
+    setWarmupIndex(0)
+    setWarmupMessage('')
+    setStage('warmup')
+  }
+
+  const answerWarmup = (optionIndex: number) => {
+    const question = WARMUP_QUESTIONS[warmupIndex]
+    if (!question) return
+    if (optionIndex !== question.correctIndex) {
+      setWarmupMessage(question.hint)
+      return
+    }
+    setWarmupMessage('Верно. Теперь применим эту модель к примеру.')
+    if (warmupIndex === WARMUP_QUESTIONS.length - 1) {
+      setStage('model')
+    } else {
+      setWarmupIndex((index) => index + 1)
+    }
+  }
+
+  const finishModel = () => {
     setDemoIndex(0)
     setStage('demo')
   }
@@ -228,18 +274,38 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
       <header className="lesson-header">
         <button className="icon-button lesson-back" type="button" aria-label="Выйти из урока" onClick={onExit}>←</button>
         <div className="lesson-header-title"><span className="lesson-level-tag">УРОВЕНЬ {levelId}</span><strong>{level.shortTitle}</strong></div>
-        {stage === 'practice' ? <span className="lesson-progress-pill">{questionNumber} / {lessonSize}</span> : <span className="lesson-progress-pill">БУК рядом</span>}
+        {stage === 'practice' ? <span className="lesson-progress-pill">{questionNumber} / {lessonSize}</span> : <span className="lesson-progress-pill">{stage === 'warmup' ? 'Повторяем' : stage === 'model' ? 'Модель' : stage === 'demo' ? 'Открываем способ' : 'БУК рядом'}</span>}
       </header>
 
       {stage === 'intro' && (
         <section className="lesson-content lesson-intro" aria-labelledby="lesson-title">
-          <div className="lesson-coach-card"><Owl size={68} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /><div><strong>Привет, {profile.name}!</strong><p>Сначала БУК покажет один пример, а потом ты попробуешь сам.</p></div></div>
-          <div className="lesson-title-block"><p className="eyebrow">СЕГОДНЯ ТРЕНИРУЕМ</p><h1 id="lesson-title">{level.title}</h1><p>{level.description}</p></div>
+          <div className="lesson-coach-card"><Owl size={68} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /><div><strong>Привет, {profile.name}!</strong><p>Сегодня ты сначала попробуешь сам найти способ. БУК поможет построить модель и сверить открытие.</p></div></div>
+          <div className="lesson-title-block"><p className="eyebrow">ИССЛЕДУЕМ И ПРОВЕРЯЕМ</p><h1 id="lesson-title">{level.title}</h1><p>{level.description}</p></div>
           <div className="column-stage-card">
             <ColumnDisplay analysis={analysis} />
-            <div className="algorithm-note"><span className="algorithm-icon" aria-hidden="true">{example.operation === 'add' ? '＋' : '−'}</span><div><strong>{example.operation === 'add' ? 'Складываем по разрядам' : 'Вычитаем по разрядам'}</strong><p>{getFirstInstruction(example.operation)}</p></div></div>
+            <div className="algorithm-note"><span className="algorithm-icon" aria-hidden="true">{example.operation === 'add' ? '＋' : '−'}</span><div><strong>Пробное задание</strong><p>{getFirstInstruction(example.operation)}</p></div></div>
           </div>
-          <div className="lesson-footer-actions"><button className="primary-button" type="button" onClick={startDemo}>Показать первый шаг <span aria-hidden="true">→</span></button><span className="no-pressure-note">Без таймера. Можно остановиться в любой момент.</span></div>
+          <div className="lesson-footer-actions"><button className="primary-button" type="button" onClick={startModel}>Попробовать и исследовать <span aria-hidden="true">→</span></button><span className="no-pressure-note">Без таймера и штрафов. Можно остановиться в любой момент.</span></div>
+        </section>
+      )}
+
+      {stage === 'warmup' && (
+        <section className="lesson-content warmup-screen" aria-labelledby="warmup-title">
+          <div className="warmup-card">
+            <p className="eyebrow">ВОСПОМИНАЕМ ИЗВЕСТНОЕ · ШАГ {warmupIndex + 1} ИЗ {WARMUP_QUESTIONS.length}</p>
+            <h1 id="warmup-title">{WARMUP_QUESTIONS[warmupIndex]?.prompt}</h1>
+            <p className="warmup-intro">Сначала восстановим знакомую модель. Это не контрольная: можно спокойно подумать и попробовать ещё раз.</p>
+            <div className="warmup-options">
+              {WARMUP_QUESTIONS[warmupIndex]?.options.map((option, index) => <button className="warmup-option" type="button" key={option} onClick={() => answerWarmup(index)}>{option}</button>)}
+            </div>
+            <p className="warmup-feedback" role="status" aria-live="polite">{warmupMessage || 'Выбери ответ, который подходит к модели.'}</p>
+          </div>
+        </section>
+      )}
+
+      {stage === 'model' && (
+        <section className="lesson-content lesson-model" aria-label="Исследование модели">
+          <PlaceValueExplorer a={example.a} b={example.b} operation={example.operation} onComplete={finishModel} />
         </section>
       )}
 
@@ -251,7 +317,7 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
           </div>
           <div className="demo-explanation-card" aria-live="polite">
             <div className="coach-avatar-small"><Owl size={48} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /></div>
-            <div><p className="eyebrow">БУК ОБЪЯСНЯЕТ</p><h1 id="demo-title">{inputSteps[demoIndex]?.isFinalCarry ? 'Перенос в ответ' : `Разряд ${inputSteps[demoIndex]?.placeName ?? ''}`}</h1><p>{inputSteps[demoIndex] ? describeStep(inputSteps[demoIndex]!, example.operation) : 'Посмотри, как цифры выстраиваются по разрядам.'}</p></div>
+            <div><p className="eyebrow">ФИКСИРУЕМ НАЙДЕННЫЙ СПОСОБ</p><h1 id="demo-title">{inputSteps[demoIndex]?.isFinalCarry ? 'Записываем перенос' : `Разряд ${inputSteps[demoIndex]?.placeName ?? ''}`}</h1><p>{inputSteps[demoIndex] ? describeStep(inputSteps[demoIndex]!) : 'Сопоставь модель с записью по разрядам.'}</p></div>
           </div>
           <div className="lesson-footer-actions"><button className="primary-button" type="button" onClick={nextDemoStep}>{demoIndex < inputSteps.length - 1 ? 'Следующий шаг' : 'Начать тренировку'} <span aria-hidden="true">→</span></button><span className="no-pressure-note">Пример разбираем от единиц к старшим разрядам</span></div>
         </section>
@@ -275,7 +341,16 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
           {errorText ? (
             <div className="error-action-row"><span className="soft-correction"><span aria-hidden="true">💛</span> Ошибка — это подсказка, не беда.</span><button className="primary-button compact-button" type="button" onClick={dismissError}>Понятно, попробую ещё раз</button></div>
           ) : questionComplete ? (
-            <div className="question-complete-card" role="status"><div className="complete-stars" aria-hidden="true">✦ ✦ ✦</div><strong>{mistakes === 0 && !hintUsed ? 'Отлично! Самостоятельно!' : 'Здорово, ты справился!'}</strong><p>Ошибки не отнимают награду — главное, что ты разобрался.</p><button className="primary-button" type="button" onClick={continueFromQuestion}>{questionNumber < lessonSize ? 'Следующий пример' : 'Завершить урок'} <span aria-hidden="true">→</span></button></div>
+            <section className="question-complete-card" aria-labelledby="question-complete-title">
+              <div className="complete-stars" aria-hidden="true">✦ ✦ ✦</div>
+              <strong id="question-complete-title">{mistakes === 0 && !hintUsed ? 'Отлично! Самостоятельно!' : 'Здорово, ты справился!'}</strong>
+              <p>Теперь сравни свой ход решения с эталоном. Ошибки не отнимают награду — они помогают понять, что проверить.</p>
+              <ol className="self-check-list" aria-label="Эталон для самопроверки">
+                {analysis.steps.map((step) => <li key={step.place}>{step.explanation}</li>)}
+              </ol>
+              <button className="secondary-button self-check-button" type="button" onClick={() => setSelfCheckAck(true)} aria-pressed={selfCheckAck}>{selfCheckAck ? 'Шаги сверены ✓' : 'Я сверил каждый шаг'}</button>
+              <button className="primary-button" type="button" onClick={continueFromQuestion} disabled={!selfCheckAck}>{questionNumber < lessonSize ? 'Следующий пример' : 'Завершить урок'} <span aria-hidden="true">→</span></button>
+            </section>
           ) : (
             <>
               <Keypad onDigit={attemptDigit} onErase={eraseLastDigit} disabled={false} eraseDisabled={stepIndex === 0} />
@@ -295,6 +370,15 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
           <p className="eyebrow">УРОК ЗАВЕРШЁН</p>
           <h1 id="finish-title">Ты отлично потрудился, {profile.name}!</h1>
           <p className="finish-description">Сегодня ты довёл до конца {solvedCount} {solvedCount === 1 ? 'пример' : 'примера'}. Можно возвращаться в любое время — БУК будет ждать.</p>
+          <div className="reflection-panel" role="group" aria-labelledby="reflection-title">
+            <strong id="reflection-title">Что помогло тебе сегодня?</strong>
+            <div className="reflection-options">
+              <button className={reflectionChoice === 'model' ? 'reflection-option reflection-option-selected' : 'reflection-option'} type="button" aria-pressed={reflectionChoice === 'model'} onClick={() => setReflectionChoice('model')}>Модель разрядов</button>
+              <button className={reflectionChoice === 'help' ? 'reflection-option reflection-option-selected' : 'reflection-option'} type="button" aria-pressed={reflectionChoice === 'help'} onClick={() => setReflectionChoice('help')}>Подсказка БУКа</button>
+              <button className={reflectionChoice === 'self-check' ? 'reflection-option reflection-option-selected' : 'reflection-option'} type="button" aria-pressed={reflectionChoice === 'self-check'} onClick={() => setReflectionChoice('self-check')}>Самопроверка</button>
+            </div>
+            {reflectionChoice && <p className="reflection-feedback" role="status">Спасибо, что заметил, какой способ помог.</p>}
+          </div>
           <div className="finish-rewards"><span>💎 +5 кристаллов</span><span>🧩 +1 фрагмент костюма</span><span>⭐ +10 опыта</span></div>
           <button className="primary-button" type="button" onClick={onExit}>На главную <span aria-hidden="true">→</span></button>
         </section>

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetLocalDatabaseForTests } from '../platform/database'
 import { useAppStore } from '../state/store'
+import { buildPlaceValueActions } from '../engine/placeValue'
 import { App } from '../ui/App'
 
 beforeEach(async () => {
@@ -20,6 +21,22 @@ async function solveCurrentExample(user: ReturnType<typeof userEvent.setup>): Pr
   }
 }
 
+async function completeCurrentModel(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  const a = Number(screen.getByText(/Первое число:/).textContent?.match(/\d+/)?.[0])
+  const b = Number(screen.getByText(/Второе число:/).textContent?.match(/\d+/)?.[0])
+  const operationText = screen.getByTestId('model-operation').textContent
+  const actions = buildPlaceValueActions(a, b, operationText === '+' ? 'add' : 'subtract')
+  for (const action of actions) {
+    if (action.kind === 'combine') {
+      await user.click(screen.getByRole('button', { name: new RegExp(`^${action.total}$`) }))
+    } else if (action.kind === 'regroup' || action.kind === 'exchange') {
+      await user.click(screen.getByTestId('model-correct-choice'))
+    } else {
+      await user.click(screen.getByRole('button', { name: new RegExp(`^${action.remaining}$`) }))
+    }
+  }
+}
+
 describe('первый запуск и короткий урок', () => {
   it('создаёт профиль, проходит урок и выдаёт награду без ошибок рендера', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -32,12 +49,17 @@ describe('первый запуск и короткий урок', () => {
 
     expect(await screen.findByRole('heading', { name: 'Считаем шаг за шагом' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Начать 1:/ }))
-    await user.click(await screen.findByRole('button', { name: /Показать первый шаг/ }))
+    await user.click(await screen.findByRole('button', { name: /Попробовать и исследовать/ }))
+    await user.click(screen.getByRole('button', { name: 'Десять единиц' }))
+    await user.click(screen.getByRole('button', { name: '10 десятков' }))
+    await completeCurrentModel(user)
+    await user.click(screen.getByRole('button', { name: /Перейти к записи в столбик/ }))
     await user.click(screen.getByRole('button', { name: /Следующий шаг/ }))
     await user.click(screen.getByRole('button', { name: /Начать тренировку/ }))
 
     for (let question = 1; question <= 5; question += 1) {
       await solveCurrentExample(user)
+      await user.click(await screen.findByRole('button', { name: /Я сверил каждый шаг/ }))
       const actionName = question === 5 ? /Завершить урок/ : /Следующий пример/
       await user.click(await screen.findByRole('button', { name: actionName }))
     }

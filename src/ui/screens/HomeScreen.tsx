@@ -126,7 +126,7 @@ export function HomeScreen({
         <div className="home-left-column">
           <section className="section-block levels-block" aria-labelledby="levels-heading">
             <div className="section-heading">
-              <div><p className="eyebrow">ТВОЯ ДОРОЖКА</p><h2 id="levels-heading">Уровни обучения</h2></div>
+              <div><p className="eyebrow">МОДУЛЬ ПО МЕТОДИКЕ</p><h2 id="levels-heading">Сложение и вычитание столбиком</h2><p className="course-scope-note">13 тем — от двузначных действий к трёхзначным. Это раздел тренажёра, а не весь курс математики за 2 класс.</p></div>
               <span className="progress-count">Открыто {unlocked} из 13</span>
             </div>
             <div className="level-list">
