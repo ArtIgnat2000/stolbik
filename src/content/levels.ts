@@ -22,10 +22,10 @@ export interface Example {
 }
 
 /**
- * This is an arithmetic module, not a claim to cover the complete Peterson
- * grade-2 course. Its order follows the official grade-2 sequence for written
- * addition/subtraction: two-digit methods, transition through a ten, place-value
- * work with three-digit numbers, then addition and subtraction with regrouping.
+ * This is a narrow arithmetic module, not the complete Peterson grade-2 course.
+ * Its 13-level order is an app-authored progression informed by public official
+ * guidance and the current 2026/2027 grade-2 advanced-level textbook set. It is
+ * not a page-by-page or lesson-by-lesson reproduction; see docs/peterson-methodology.md.
  */
 export const LEVELS: readonly LevelInfo[] = [
   { id: 1, title: 'Вспоминаем сложение и вычитание', shortTitle: 'Двузначные числа: запись в столбик', description: 'Сопоставляем десятки с десятками, единицы с единицами и объясняем, почему начинаем с единиц.', example: '34 + 25 · 57 − 32', band: 'двузначные', operation: 'mixed' },
