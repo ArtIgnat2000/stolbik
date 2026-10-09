@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { ChildProfile } from '../../state/profile'
 import { Owl } from '../components/Owl'
+import { plural, EXAMPLES, PUPILS } from '../plural'
 
 const PROFILE_COLORS = ['#7762e8', '#51a99b', '#ec9a55', '#df7196', '#5389ca'] as const
 
@@ -52,13 +53,13 @@ export function ProfileScreen({ profiles, activeProfileId, storageWarning, onSel
               <p className="eyebrow">ВАШИ ПРОФИЛИ</p>
               <h2 id="profiles-title">Выбери профиль</h2>
             </div>
-            <span className="soft-badge">{profiles.length} {profiles.length === 1 ? 'ученик' : 'ученика'}</span>
+            <span className="soft-badge">{plural(profiles.length, PUPILS)}</span>
           </div>
           <div className="profile-list">
             {profiles.map((profile) => (
               <button className={`profile-choice${profile.id === activeProfileId ? ' profile-choice-active' : ''}`} type="button" key={profile.id} onClick={() => onSelect(profile.id)}>
                 <span className="profile-avatar" style={{ backgroundColor: profile.color }}><Owl size={42} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /></span>
-                <span className="profile-choice-copy"><strong>{profile.name}</strong><span>{profile.progress.totalSolved} примеров решено</span></span>
+                <span className="profile-choice-copy"><strong>{profile.name}</strong><span>{plural(profile.progress.totalSolved, EXAMPLES)} решено</span></span>
                 <span className="profile-choice-arrow" aria-hidden="true">→</span>
               </button>
             ))}

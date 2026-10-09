@@ -2,6 +2,7 @@ import { getLevelInfo, LEVELS, type LevelId } from '../../content/levels'
 import { getDailyProgress, getHighestUnlockedLevel, getLevelProgress, type ChildProfile } from '../../state/profile'
 import { getDailyTaskState } from '../../state/store'
 import { FloatingOwl } from '../components/FloatingOwl'
+import { plural, CROWNS, KEYS } from '../plural'
 import { Owl } from '../components/Owl'
 
 interface HomeScreenProps {
@@ -140,7 +141,7 @@ export function HomeScreen({
                     key={level.id}
                     disabled={!isUnlocked}
                     onClick={() => onStartLesson(level.id)}
-                    aria-label={`${isUnlocked ? 'Начать' : 'Закрытый уровень'} ${level.id}: ${level.title}, корон ${levelProgress.crowns} из 3`}
+                    aria-label={`${isUnlocked ? 'Начать' : 'Закрытый уровень'} ${level.id}: ${level.title}, ${plural(levelProgress.crowns, CROWNS)} из 3`}
                   >
                     <span className={`level-number${level.operation === 'subtract' ? ' level-number-subtract' : ''}${level.operation === 'mixed' ? ' level-number-mixed' : ''}`}>
                       {level.operation === 'add' ? '+' : level.operation === 'subtract' ? '−' : '±'}
@@ -148,7 +149,7 @@ export function HomeScreen({
                     </span>
                     <span className="level-copy"><strong>{level.shortTitle}</strong><span>{level.description}</span><span className="level-example">{level.example}{level.operation !== 'mixed' ? ' =' : ''}</span></span>
                     <span className="level-end">
-                      <span className="crowns" aria-label={`${levelProgress.crowns} короны из 3`}>{[1, 2, 3].map((crown) => <span className={crown <= levelProgress.crowns ? 'crown crown-earned' : 'crown'} key={crown}>♛</span>)}</span>
+                      <span className="crowns" aria-label={`${plural(levelProgress.crowns, CROWNS)} из 3`}>{[1, 2, 3].map((crown) => <span className={crown <= levelProgress.crowns ? 'crown crown-earned' : 'crown'} key={crown}>♛</span>)}</span>
                       <span className="level-arrow" aria-hidden="true">{isUnlocked ? '→' : '🔒'}</span>
                     </span>
                   </button>
@@ -163,7 +164,7 @@ export function HomeScreen({
           <section className="daily-card panel-card" aria-labelledby="daily-heading">
             <div className="section-heading daily-section-heading">
               <div><p className="eyebrow">МАЛЕНЬКИЕ МИССИИ</p><h2 id="daily-heading">Задания на сегодня</h2></div>
-              <span className="key-counter" aria-label={`${claimedCount} ключа из 3`}>🗝️ {claimedCount}/3</span>
+              <span className="key-counter" aria-label={`${plural(claimedCount, KEYS)} из 3`}>🗝️ {claimedCount}/3</span>
             </div>
             <div className="daily-task-list">
               {TASKS.map((task) => {

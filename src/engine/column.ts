@@ -59,6 +59,12 @@ function placeName(place: number): string {
   return PLACE_NAMES[place] ?? 'старших разрядов'
 }
 
+function carriedUnits(count: number): string {
+  if (count === 1) return 'одна перенесённая единица'
+  if (count >= 2 && count <= 4) return `${count} перенесённые единицы`
+  return `${count} перенесённых единиц`
+}
+
 function makeAdditionExplanation(
   place: number,
   aDigit: number,
@@ -68,7 +74,7 @@ function makeAdditionExplanation(
   expectedDigit: number,
   carryOut: number
 ): string {
-  const carryPart = carryIn > 0 ? ` и ${carryIn} перенесённая единица` : ''
+  const carryPart = carryIn > 0 ? ` и ${carriedUnits(carryIn)}` : ''
   const calculation = `${aDigit} + ${bDigit}${carryPart} = ${subtotal}`
   if (carryOut > 0) {
     const nextName = placeName(place + 1)

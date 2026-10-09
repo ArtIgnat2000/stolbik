@@ -8,6 +8,7 @@ import { Keypad } from '../components/Keypad'
 import { Owl } from '../components/Owl'
 import { PlaceValueExplorer } from '../components/PlaceValueExplorer'
 import { getSelfCheckStepText, getSelfCheckStepTitle } from './lessonSelfCheck'
+import { plural, EXAMPLES } from '../plural'
 
 interface LessonScreenProps {
   profile: ChildProfile
@@ -23,14 +24,14 @@ type ReflectionChoice = 'model' | 'help' | 'self-check'
 
 const WARMUP_QUESTIONS = [
   {
-    prompt: 'Точка — одна единица. Посчитай точки в треугольнике.',
-    options: ['Одну единицу', 'Десять единиц', 'Одну сотню'],
+    prompt: 'Точка — одна единица. Сколько точек в одном треугольнике?',
+    options: ['1 (одна)', '10 (десять)', '100 (сто)'],
     correctIndex: 1,
-    hint: 'Вспомни: десять точек можно объединить в один треугольник-десяток.'
+    hint: 'Вспомни: десять точек объединяются в один треугольник-десяток.'
   },
   {
-    prompt: 'Сколько десятков составляют одну сотню?',
-    options: ['1 десяток', '10 десятков', '100 десятков'],
+    prompt: 'Сколько десятков в одной сотне?',
+    options: ['1 (один)', '10 (десять)', '100 (сто)'],
     correctIndex: 1,
     hint: 'Сотня — это десять десятков; в модели это десять треугольников.'
   }
@@ -65,9 +66,9 @@ function WarmupPlaceValueDiagram() {
 }
 
 function getPromptHint(step: ColumnStep, operation: 'add' | 'subtract'): string {
-  if (step.isFinalCarry) return `Перенесённую ${step.carryIn} запиши в разряд ${step.placeName}.`
+  if (step.isFinalCarry) return `Перенесённую единицу запиши в разряд ${step.placeName}.`
   if (operation === 'add') {
-    const carryNote = step.carryIn > 0 ? ` Не забудь прибавить ещё ${step.carryIn} перенесённую единицу.` : ''
+    const carryNote = step.carryIn > 0 ? ' Не забудь прибавить ещё одну перенесённую единицу.' : ''
     return `Сколько будет ${step.aDigit} + ${step.bDigit}?${carryNote} Если единиц получится больше девяти, подумай, как сгруппировать их по разрядам.`
   }
   if (step.borrow) {
@@ -408,7 +409,7 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
           <div className="finish-illustration"><Owl size={150} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /><span className="finish-confetti confetti-one">✦</span><span className="finish-confetti confetti-two">✧</span></div>
           <p className="eyebrow">УРОК ЗАВЕРШЁН</p>
           <h1 id="finish-title">Ты отлично потрудился, {profile.name}!</h1>
-          <p className="finish-description">Сегодня ты довёл до конца {solvedCount} {solvedCount === 1 ? 'пример' : 'примера'}. Можно возвращаться в любое время — БУК будет ждать.</p>
+          <p className="finish-description">Сегодня ты довёл до конца {plural(solvedCount, EXAMPLES)}. Можно возвращаться в любое время — БУК будет ждать.</p>
           <div className="reflection-panel" role="group" aria-labelledby="reflection-title">
             <strong id="reflection-title">Что помогло тебе сегодня?</strong>
             <div className="reflection-options">

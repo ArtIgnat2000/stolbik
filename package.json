@@ -11,7 +11,7 @@
     "pickup": "npm install && npm run typecheck && npm run content:check && npm run test:engine && npm run test:smoke && npm run audit:storage && npm run build && npm run test:boot",
     "content:check": "tsx src/content/check.ts",
     "test:engine": "vitest run src/engine",
-    "test:smoke": "vitest run src/tests src/ui/components src/ui/screens",
+    "test:smoke": "vitest run src/tests src/ui",
     "test:boot": "tsx scripts/test-boot.ts",
     "audit:storage": "vitest run src/platform/storage.test.ts"
   },
