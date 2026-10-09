@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { buildPlaceValueActions, getPlaceName, type PlaceValueAction } from '../../engine/placeValue'
 import type { Operation } from '../../engine/column'
+import { ExchangeDiagram, PlaceValueChips, type ChipGroup } from './placeValueMarks'
 
 interface PlaceValueExplorerProps {
   a: number
@@ -9,7 +10,6 @@ interface PlaceValueExplorerProps {
   onComplete: () => void
 }
 
-const PLACE_SYMBOLS = ['•', '△', '△', '△'] as const
 const PLACE_LABELS = ['единицы', 'десятки', 'сотни', 'тысячи'] as const
 const PLACE_FORMS = [
   { one: 'единицу', few: 'единицы', many: 'единиц', countOne: 'единица', genOne: 'единицы', oneWord: 'одну' },
@@ -93,6 +93,108 @@ function getCurrentCounts(a: number, b: number, operation: Operation, actions: r
   return counts
 }
 
+/** Столбец модели: разряд, картинка фишек, подпись и пометка текущего действия. */
+interface ModelColumn {
+  place: number
+  groups: ChipGroup[]
+  caption: string
+  flag: string | null
+}
+
+function buildAddColumns(a: number, b: number, actions: readonly PlaceValueAction[], actionIndex: number, places: readonly number[]): ModelColumn[] {
+  const action = actions[actionIndex]
+  const previous = actions[actionIndex - 1]
+  const top = Math.max(...places)
+  const totals = Array.from({ length: top + 1 }, (_, place) => digitAt(a, place) + digitAt(b, place))
+  const combined = new Set(actions.slice(0, actionIndex).filter((item) => item.kind === 'combine').map((item) => item.place))
+  for (const item of actions.slice(0, actionIndex)) {
+    if (item.kind === 'regroup') {
+      totals[item.fromPlace] = (totals[item.fromPlace] ?? 0) - 10 * item.groupsOfTen
+      totals[item.toPlace] = (totals[item.toPlace] ?? 0) + item.groupsOfTen
+    }
+  }
+
+  return places.map((place) => {
+    const aDigit = digitAt(a, place)
+    const bDigit = digitAt(b, place)
+    const total = totals[place] ?? 0
+    let groups: ChipGroup[] = []
+    let caption = ''
+    let flag: string | null = null
+
+    if (action?.kind === 'combine' && action.place === place) {
+      if (action.aDigit === 0 && action.bDigit === 0) {
+        groups = [{ count: action.carryIn, tone: 'carry', label: 'перенос' }]
+        caption = countLabel(action.carryIn, place)
+      } else {
+        groups = [
+          ...(action.aDigit > 0 ? [{ count: action.aDigit, tone: 'first' as const, label: `из ${a}` }] : []),
+          ...(action.bDigit > 0 ? [{ count: action.bDigit, tone: 'second' as const, label: `из ${b}` }] : []),
+          ...(action.carryIn > 0 ? [{ count: action.carryIn, tone: 'carry' as const, label: 'перенос' }] : [])
+        ]
+        caption = [
+          countLabel(action.aDigit, place),
+          countLabel(action.bDigit, place),
+          ...(action.carryIn > 0 ? [countLabel(action.carryIn, place)] : [])
+        ].join(' + ')
+      }
+      flag = 'сложи'
+    } else if (action?.kind === 'regroup' && action.fromPlace === place) {
+      groups = [{ count: action.unitsLeft }, { count: action.groupsOfTen * 10, tone: 'source', label: 'меняем' }]
+      caption = describeCurrentModel(total, place)
+      flag = 'размен'
+    } else if (combined.has(place) || (aDigit === 0 && bDigit === 0)) {
+      groups = [{ count: total }]
+      caption = describeCurrentModel(total, place)
+    } else {
+      groups = [
+        { count: aDigit, tone: 'first', label: `из ${a}` },
+        { count: bDigit, tone: 'second', label: `из ${b}` }
+      ]
+      caption = `${countLabel(aDigit, place)} + ${countLabel(bDigit, place)}`
+    }
+
+    if (previous?.kind === 'regroup' && previous.toPlace === place && !(action && isActionPlace(action, place))) {
+      groups = [{ count: Math.max(0, total - previous.groupsOfTen) }, { count: previous.groupsOfTen, tone: 'carry', label: 'новый' }]
+      caption = describeCurrentModel(total, place)
+    }
+
+    return { place, groups, caption, flag }
+  })
+}
+
+function buildSubtractColumns(a: number, b: number, actions: readonly PlaceValueAction[], actionIndex: number, places: readonly number[]): ModelColumn[] {
+  const action = actions[actionIndex]
+  const counts = getCurrentCounts(a, b, 'subtract', actions, actionIndex)
+
+  return places.map((place) => {
+    const count = counts[place] ?? 0
+    let groups: ChipGroup[] = [{ count }]
+    let flag: string | null = null
+
+    if (action?.kind === 'remove' && action.place === place) {
+      groups = [{ count: action.remaining }, { count: action.amount, tone: 'removing', crossed: true }]
+      flag = `− ${amountLabel(action.amount, action.place)}`
+    } else if (action?.kind === 'exchange' && action.fromPlace === place) {
+      groups = [{ count: Math.max(0, count - 1) }, { count: 1, tone: 'source', label: 'меняем' }]
+      flag = 'размен'
+    } else if (action?.kind === 'exchange' && action.toPlace === place) {
+      flag = 'сюда'
+    }
+
+    return { place, groups, caption: describeCurrentModel(count, place), flag }
+  })
+}
+
+function buildResultColumns(result: number, places: readonly number[]): ModelColumn[] {
+  return places.map((place) => ({
+    place,
+    groups: [{ count: digitAt(result, place) }],
+    caption: describeCurrentModel(digitAt(result, place), place),
+    flag: null
+  }))
+}
+
 function getActionPrompt(action: PlaceValueAction): string {
   if (action.kind === 'combine') {
     const place = PLACE_LABELS[action.place] ?? 'разряд'
@@ -161,7 +263,7 @@ function getWrongAnswerMessage(action: PlaceValueAction): string {
     return `Ответ не совпал. Вспомни: 10 ${getPlaceName(action.fromPlace)} можно обменять на ${amountLabel(1, action.toPlace)}. Попробуй ещё раз.`
   }
   if (action.kind === 'exchange') {
-    return `Ответ не совпал. Размен должен сохранить число. Подумай, какую фишку меняют на 10 ${getPlaceName(action.toPlace)}, и выбери обмен ещё раз.`
+    return `Ответ не совпал. Размен должен сохранять число. Подумай, какую фишку меняют на 10 ${getPlaceName(action.toPlace)}, и выбери обмен ещё раз.`
   }
   return `Ответ не совпал. Из ${genitiveLabel(action.available, action.place)} убери ${amountLabel(action.amount, action.place)} и пересчитай остаток. Попробуй ещё раз.`
 }
@@ -170,6 +272,32 @@ function isActionPlace(action: PlaceValueAction | undefined, place: number): boo
   if (!action) return false
   if (action.kind === 'combine' || action.kind === 'remove') return action.place === place
   return action.fromPlace === place || action.toPlace === place
+}
+
+/** Размен, который показывает картинка: 1 фишка старшего разряда = 10 младших. */
+function getExchangeDiagram(action: Extract<PlaceValueAction, { kind: 'regroup' | 'exchange' }>) {
+  if (action.kind === 'regroup') {
+    return {
+      fromPlace: action.fromPlace,
+      toPlace: action.toPlace,
+      fromCount: action.groupsOfTen * 10,
+      toCount: action.groupsOfTen,
+      fromLabel: countLabel(action.groupsOfTen * 10, action.fromPlace),
+      toLabel: countLabel(action.groupsOfTen, action.toPlace),
+      fromSize: 'sm' as const,
+      toSize: 'xl' as const
+    }
+  }
+  return {
+    fromPlace: action.fromPlace,
+    toPlace: action.toPlace,
+    fromCount: 1,
+    toCount: 10,
+    fromLabel: countLabel(1, action.fromPlace),
+    toLabel: countLabel(10, action.toPlace),
+    fromSize: 'xl' as const,
+    toSize: 'sm' as const
+  }
 }
 
 function renderAction(action: PlaceValueAction, onAdvance: () => void, onWrong: () => void) {
@@ -207,9 +335,21 @@ export function PlaceValueExplorer({ a, b, operation, onComplete }: PlaceValueEx
   const [feedbackTone, setFeedbackTone] = useState<'neutral' | 'correct' | 'retry' | 'hint'>('neutral')
   const [message, setMessage] = useState('Выбери подходящий ответ ниже.')
   const action = actions[actionIndex]
-  const counts = getCurrentCounts(a, b, operation, actions, actionIndex)
-  const places = Array.from({ length: Math.max(String(a).length, String(b).length) }, (_, index) => Math.max(String(a).length, String(b).length) - index - 1)
+  const result = operation === 'add' ? a + b : a - b
+  const places = useMemo(() => {
+    const length = Math.max(String(a).length, String(b).length)
+    const highest = actions.reduce((max, item) => Math.max(max, 'place' in item ? item.place : item.toPlace), -1)
+    const count = Math.max(length, highest + 1)
+    return Array.from({ length: count }, (_, index) => count - index - 1)
+  }, [a, b, actions])
+  const columns = useMemo(() => (
+    operation === 'add'
+      ? buildAddColumns(a, b, actions, actionIndex, places)
+      : buildSubtractColumns(a, b, actions, actionIndex, places)
+  ), [a, b, actions, actionIndex, operation, places])
+  const resultColumns = useMemo(() => buildResultColumns(result, places), [result, places])
   const isComplete = actionIndex >= actions.length
+  const exchange = action && (action.kind === 'regroup' || action.kind === 'exchange') ? getExchangeDiagram(action) : null
 
   const advance = () => {
     const isLastAction = actionIndex >= actions.length - 1
@@ -229,15 +369,38 @@ export function PlaceValueExplorer({ a, b, operation, onComplete }: PlaceValueEx
     setMessage(getActionHint(action))
   }
 
+  const renderColumn = (column: ModelColumn, keyPrefix: string, interactive: boolean) => (
+    <div
+      className={`model-board-column${interactive && isActionPlace(action, column.place) ? ' model-board-column-active' : ''}`}
+      key={`${keyPrefix}-${column.place}`}
+    >
+      <div className="model-board-column-head">
+        <span className="model-board-place">{PLACE_LABELS[column.place] ?? 'разряд'}</span>
+        {interactive && column.flag && <span className="model-board-flag">{column.flag}</span>}
+      </div>
+      <PlaceValueChips place={column.place} groups={column.groups} size="md" />
+      <strong className="model-board-caption">{column.caption}</strong>
+    </div>
+  )
+
   return (
     <section className="place-explorer-card" aria-labelledby="model-title">
       <div className="place-explorer-heading">
         <p className="eyebrow">УЧИМСЯ НА ПРИМЕРЕ</p>
         <h1 id="model-title">{operation === 'add' ? 'Складываем по разрядам' : 'Вычитаем по разрядам'}</h1>
         <div className="model-symbol-guide" role="group" aria-label="Значение фишек">
-          <span className="model-symbol-key"><b aria-hidden="true">•</b><span>1 точка — 1 единица</span></span>
-          <span className="model-symbol-key"><b aria-hidden="true">△</b><span>1 треугольник — 1 десяток (10 точек)</span></span>
-          <span className="model-symbol-key"><b aria-hidden="true">10 △</b><span>10 десятков — 1 сотня</span></span>
+          <span className="model-symbol-key">
+            <PlaceValueChips place={0} groups={[{ count: 1 }]} size="xl" />
+            <span>1 точка — 1 единица</span>
+          </span>
+          <span className="model-symbol-key">
+            <PlaceValueChips place={1} groups={[{ count: 1 }]} size="xl" />
+            <span>1 треугольник — 1 десяток (10 точек)</span>
+          </span>
+          <span className="model-symbol-key">
+            <PlaceValueChips place={2} groups={[{ count: 1 }]} size="xl" />
+            <span>10 десятков — 1 сотня</span>
+          </span>
         </div>
         <p className="model-instruction">Считай справа налево. Прочитай задание над фишками и выбери ответ или размен внизу.</p>
       </div>
@@ -245,15 +408,27 @@ export function PlaceValueExplorer({ a, b, operation, onComplete }: PlaceValueEx
       <div className="place-operands" role="group" aria-label="Модели чисел">
         <div className="place-operand-card">
           <strong>Первое число: {a}</strong>
-          <div className="place-token-row">
-            {places.map((place) => <span className={`place-token place-token-${place}`} key={`a-${place}`}><b aria-hidden="true">{PLACE_SYMBOLS[place] ?? '◆'}</b><span>{PLACE_LABELS[place] ?? 'разряд'}: {describeTokens(a, place)}</span></span>)}
+          <div className="place-operand-places">
+            {places.map((place) => (
+              <div className={`place-operand-place place-token-${place}`} key={`a-${place}`}>
+                <span className="place-operand-place-name">{PLACE_LABELS[place] ?? 'разряд'}</span>
+                <PlaceValueChips place={place} groups={[{ count: digitAt(a, place) }]} size="sm" />
+                <span className="visually-hidden">{describeTokens(a, place)}</span>
+              </div>
+            ))}
           </div>
         </div>
         <div className="place-operation-mark" role="img" aria-label={operation === 'add' ? 'плюс' : 'минус'} data-testid="model-operation">{operation === 'add' ? '+' : '−'}</div>
         <div className="place-operand-card">
           <strong>Второе число: {b}</strong>
-          <div className="place-token-row">
-            {places.map((place) => <span className={`place-token place-token-${place}`} key={`b-${place}`}><b aria-hidden="true">{PLACE_SYMBOLS[place] ?? '◆'}</b><span>{PLACE_LABELS[place] ?? 'разряд'}: {describeTokens(b, place)}</span></span>)}
+          <div className="place-operand-places">
+            {places.map((place) => (
+              <div className={`place-operand-place place-token-${place}`} key={`b-${place}`}>
+                <span className="place-operand-place-name">{PLACE_LABELS[place] ?? 'разряд'}</span>
+                <PlaceValueChips place={place} groups={[{ count: digitAt(b, place) }]} size="sm" />
+                <span className="visually-hidden">{describeTokens(b, place)}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -263,14 +438,28 @@ export function PlaceValueExplorer({ a, b, operation, onComplete }: PlaceValueEx
           <span className="model-step-badge">{isComplete ? 'МОДЕЛЬ ГОТОВА' : `ШАГ ${actionIndex + 1} ИЗ ${actions.length}`}</span>
           <strong aria-live="polite">{isComplete ? 'Готово! Теперь запишем пример столбиком.' : action ? getActionPrompt(action) : ''}</strong>
         </div>
-        <div className="model-current-places">
-          {places.slice().reverse().map((place) => (
-            <div className={`model-current-place${isActionPlace(action, place) ? ' model-current-place-active' : ''}`} key={place}>
-              <span>{PLACE_LABELS[place] ?? 'разряд'}</span>
-              <strong>{describeCurrentModel(counts[place] ?? 0, place)}</strong>
-            </div>
-          ))}
+
+        {exchange && (
+          <div className="model-exchange-card">
+            <p className="eyebrow">РАЗМЕН</p>
+            <ExchangeDiagram {...exchange} />
+          </div>
+        )}
+
+        <div className="model-board" role="group" aria-label="Модель примера по разрядам">
+          {columns.map((column) => renderColumn(column, 'model', !isComplete))}
         </div>
+
+        {isComplete && (
+          <div className="model-result-card">
+            <p className="eyebrow">ПОЛУЧИЛОСЬ</p>
+            <strong className="model-result-title">{a} {operation === 'add' ? '+' : '−'} {b} = {result}</strong>
+            <div className="model-board model-board-result">
+              {resultColumns.map((column) => renderColumn(column, 'result', false))}
+            </div>
+          </div>
+        )}
+
         {!isComplete && action && renderAction(action, advance, handleWrongChoice)}
         {isComplete && <p className="model-finish-note">Нажми кнопку ниже, чтобы записать пример столбиком.</p>}
         <p className={`model-feedback model-feedback-${feedbackTone}`} role="status" aria-live="polite" aria-atomic="true">

@@ -7,6 +7,7 @@ import { ColumnDisplay } from '../components/ColumnDisplay'
 import { Keypad } from '../components/Keypad'
 import { Owl } from '../components/Owl'
 import { PlaceValueExplorer } from '../components/PlaceValueExplorer'
+import { TEN_DOT_POSITIONS } from '../components/placeValueMarks'
 import { getSelfCheckStepText, getSelfCheckStepTitle } from './lessonSelfCheck'
 import { plural, EXAMPLES } from '../plural'
 
@@ -35,13 +36,6 @@ const WARMUP_QUESTIONS = [
     correctIndex: 1,
     hint: 'Сотня — это десять десятков; в модели это десять треугольников.'
   }
-] as const
-
-const TEN_DOT_POSITIONS = [
-  [60, 25],
-  [48, 43], [72, 43],
-  [36, 61], [60, 61], [84, 61],
-  [24, 79], [48, 79], [72, 79], [96, 79]
 ] as const
 
 function WarmupPlaceValueDiagram() {
