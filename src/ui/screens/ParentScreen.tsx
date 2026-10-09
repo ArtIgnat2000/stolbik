@@ -3,6 +3,7 @@ import { LEVELS } from '../../content/levels'
 import { getBackupCount } from '../../platform/database'
 import { downloadProfileBackup, parseProfileBackup } from '../../platform/backup'
 import { getHighestUnlockedLevel, getLevelProgress, type ChildProfile, type HintMode, type ProfileSettings } from '../../state/profile'
+import { plural, BACKUPS, CROWNS, MISTAKES } from '../plural'
 
 declare const __APP_VERSION__: string
 declare const __COMMIT_SHA__: string
@@ -114,7 +115,7 @@ export function ParentScreen({ profile, onBack, onSettingsChange, onResetProgres
         <div className="level-stat-list">
           {LEVELS.map((level) => {
             const progress = getLevelProgress(profile, level.id)
-            return <div className="level-stat-row" key={level.id}><span className="level-stat-number">{String(level.id).padStart(2, '0')}</span><span className="level-stat-title">{level.shortTitle}</span><span className="level-stat-count">{progress.solved} решено</span><span className="level-stat-errors">{progress.errors} ошибок</span><span className="level-stat-crowns" aria-label={`${progress.crowns} короны`}>{'♛'.repeat(progress.crowns)}<span>{'♛'.repeat(3 - progress.crowns)}</span></span></div>
+            return <div className="level-stat-row" key={level.id}><span className="level-stat-number">{String(level.id).padStart(2, '0')}</span><span className="level-stat-title">{level.shortTitle}</span><span className="level-stat-count">{progress.solved} решено</span><span className="level-stat-errors">{plural(progress.errors, MISTAKES)}</span><span className="level-stat-crowns" aria-label={`${plural(progress.crowns, CROWNS)} из 3`}>{'♛'.repeat(progress.crowns)}<span>{'♛'.repeat(3 - progress.crowns)}</span></span></div>
           })}
         </div>
       </section>
@@ -140,7 +141,7 @@ export function ParentScreen({ profile, onBack, onSettingsChange, onResetProgres
 
       <section className="diagnostics-card" aria-labelledby="diagnostics-heading">
         <div><p className="eyebrow">ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ</p><h2 id="diagnostics-heading">Диагностика</h2></div>
-        <dl><div><dt>Версия</dt><dd>{__APP_VERSION__} · {__COMMIT_SHA__}</dd></div><div><dt>Хранилище устройства</dt><dd>{storageInfo}</dd></div><div><dt>Локальные резервные копии</dt><dd>{backupCount === null ? 'Недоступны' : `${backupCount} ${backupCount === 1 ? 'копия' : 'копий'}`}</dd></div><div><dt>Подключение к интернету</dt><dd>Для занятий не требуется</dd></div></dl>
+        <dl><div><dt>Версия</dt><dd>{__APP_VERSION__} · {__COMMIT_SHA__}</dd></div><div><dt>Хранилище устройства</dt><dd>{storageInfo}</dd></div><div><dt>Локальные резервные копии</dt><dd>{backupCount === null ? 'Недоступны' : plural(backupCount, BACKUPS)}</dd></div><div><dt>Подключение к интернету</dt><dd>Для занятий не требуется</dd></div></dl>
       </section>
       <footer className="app-footer">Столбик — спокойное обучение без рекламы и подписок.</footer>
     </main>

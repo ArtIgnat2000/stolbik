@@ -12,10 +12,10 @@ interface PlaceValueExplorerProps {
 const PLACE_SYMBOLS = ['•', '△', '△', '△'] as const
 const PLACE_LABELS = ['единицы', 'десятки', 'сотни', 'тысячи'] as const
 const PLACE_FORMS = [
-  { one: 'единицу', few: 'единицы', many: 'единиц', countOne: 'единица' },
-  { one: 'десяток', few: 'десятка', many: 'десятков', countOne: 'десяток' },
-  { one: 'сотню', few: 'сотни', many: 'сотен', countOne: 'сотня' },
-  { one: 'тысячу', few: 'тысячи', many: 'тысяч', countOne: 'тысяча' }
+  { one: 'единицу', few: 'единицы', many: 'единиц', countOne: 'единица', genOne: 'единицы', oneWord: 'одну' },
+  { one: 'десяток', few: 'десятка', many: 'десятков', countOne: 'десяток', genOne: 'десятка', oneWord: 'один' },
+  { one: 'сотню', few: 'сотни', many: 'сотен', countOne: 'сотня', genOne: 'сотни', oneWord: 'одну' },
+  { one: 'тысячу', few: 'тысячи', many: 'тысяч', countOne: 'тысяча', genOne: 'тысячи', oneWord: 'одну' }
 ] as const
 
 function getFormIndex(amount: number): 0 | 1 | 2 {
@@ -24,17 +24,27 @@ function getFormIndex(amount: number): 0 | 1 | 2 {
   return lastTwo >= 11 && lastTwo <= 14 ? 2 : last === 1 ? 0 : last >= 2 && last <= 4 ? 1 : 2
 }
 
+/** Счётное сочетание в винительном падеже: «убери 5 единиц», «обменять одну единицу». */
 function amountLabel(amount: number, place: number): string {
   const forms = PLACE_FORMS[place] ?? PLACE_FORMS[0]
   const formIndex = getFormIndex(amount)
   const word = formIndex === 0 ? forms.one : formIndex === 1 ? forms.few : forms.many
-  return `${amount} ${word}`
+  return formIndex === 0 ? `${forms.oneWord} ${word}` : `${amount} ${word}`
 }
 
+/** Название разряда в именительном падеже: «3 единицы», «1 десяток». */
 function countLabel(amount: number, place: number): string {
   const forms = PLACE_FORMS[place] ?? PLACE_FORMS[0]
   const formIndex = getFormIndex(amount)
   const word = formIndex === 0 ? forms.countOne : formIndex === 1 ? forms.few : forms.many
+  return `${amount} ${word}`
+}
+
+/** Родительный падеж после «из»: «из 1 единицы», «из 3 единиц». */
+function genitiveLabel(amount: number, place: number): string {
+  const forms = PLACE_FORMS[place] ?? PLACE_FORMS[0]
+  const formIndex = getFormIndex(amount)
+  const word = formIndex === 0 ? forms.genOne : forms.many
   return `${amount} ${word}`
 }
 
@@ -61,7 +71,7 @@ function describeCurrentModel(count: number, place: number): string {
   if (place === 2) return `${countLabel(count, place)} — ${tokenCountLabel(count * 10, 'triangle')}`
   if (place === 1) return `${countLabel(count, place)} — ${tokenCountLabel(count, 'triangle')}`
   if (place === 0) return `${countLabel(count, place)} — ${tokenCountLabel(count, 'point')}`
-  return `${count} единиц старшего разряда`
+  return countLabel(count, 3)
 }
 
 function getCurrentCounts(a: number, b: number, operation: Operation, actions: readonly PlaceValueAction[], beforeIndex: number): number[] {
@@ -124,11 +134,11 @@ function getExchangeChoices(action: Extract<PlaceValueAction, { kind: 'regroup' 
   const correct = getActionLabel(action)
   const wrong = action.kind === 'regroup'
     ? [
-        `Объединить ${amountLabel(1, action.fromPlace)} в ${amountLabel(10, action.toPlace)}`,
-        `Объединить ${amountLabel(10, action.fromPlace)} в ${amountLabel(10, action.toPlace)}`
+        `Объединить ${amountLabel(1, action.fromPlace)} в ${amountLabel(1, action.toPlace)}`,
+        `Объединить ${amountLabel(10, action.fromPlace)} в ${amountLabel(1, action.toPlace + 1)}`
       ]
     : [
-        `Обменять ${amountLabel(10, action.fromPlace)} на ${amountLabel(1, action.toPlace)}`,
+        `Обменять ${amountLabel(10, action.toPlace)} на ${amountLabel(1, action.fromPlace)}`,
         `Обменять ${amountLabel(1, action.fromPlace)} на ${amountLabel(1, action.toPlace)}`
       ]
   return rotateOptions([correct, ...wrong], action.fromPlace + action.toPlace)
@@ -139,7 +149,7 @@ function getActionHint(action: PlaceValueAction | undefined): string {
   if (action.kind === 'combine') return 'Сосчитай фишки в этом разряде. Если был перенос, прибавь ещё одну фишку.'
   if (action.kind === 'regroup') return `Каждые 10 ${getPlaceName(action.fromPlace)} можно обменять на ${amountLabel(1, action.toPlace)}.`
   if (action.kind === 'exchange') return `Размен сохраняет число: ${amountLabel(1, action.fromPlace)} можно обменять на 10 ${getPlaceName(action.toPlace)}.`
-  return `Убери ${amountLabel(action.amount, action.place)} из ${countLabel(action.available, action.place)} и посчитай остаток.`
+  return `Убери ${amountLabel(action.amount, action.place)} из ${genitiveLabel(action.available, action.place)} и посчитай остаток.`
 }
 
 function getWrongAnswerMessage(action: PlaceValueAction): string {
@@ -153,7 +163,7 @@ function getWrongAnswerMessage(action: PlaceValueAction): string {
   if (action.kind === 'exchange') {
     return `Ответ не совпал. Размен должен сохранить число. Подумай, какую фишку меняют на 10 ${getPlaceName(action.toPlace)}, и выбери обмен ещё раз.`
   }
-  return `Ответ не совпал. Из ${countLabel(action.available, action.place)} убери ${amountLabel(action.amount, action.place)} и пересчитай остаток. Попробуй ещё раз.`
+  return `Ответ не совпал. Из ${genitiveLabel(action.available, action.place)} убери ${amountLabel(action.amount, action.place)} и пересчитай остаток. Попробуй ещё раз.`
 }
 
 function isActionPlace(action: PlaceValueAction | undefined, place: number): boolean {
@@ -204,7 +214,7 @@ export function PlaceValueExplorer({ a, b, operation, onComplete }: PlaceValueEx
   const advance = () => {
     const isLastAction = actionIndex >= actions.length - 1
     setFeedbackTone('correct')
-    setMessage(isLastAction ? 'Верно! Модель готова.' : 'Верно! Переходим к следующему шагу.')
+    setMessage(isLastAction ? 'Верно! Модель готова. Теперь запишем пример столбиком.' : 'Верно! Переходим к следующему шагу.')
     setActionIndex((index) => index + 1)
   }
 
@@ -236,14 +246,14 @@ export function PlaceValueExplorer({ a, b, operation, onComplete }: PlaceValueEx
         <div className="place-operand-card">
           <strong>Первое число: {a}</strong>
           <div className="place-token-row">
-            {places.map((place) => <span className={`place-token place-token-${place}`} key={`a-${place}`}><b aria-hidden="true">{PLACE_SYMBOLS[place] ?? '◆'}</b><span>{describeTokens(a, place)} · {PLACE_LABELS[place] ?? 'разряд'}</span></span>)}
+            {places.map((place) => <span className={`place-token place-token-${place}`} key={`a-${place}`}><b aria-hidden="true">{PLACE_SYMBOLS[place] ?? '◆'}</b><span>{PLACE_LABELS[place] ?? 'разряд'}: {describeTokens(a, place)}</span></span>)}
           </div>
         </div>
         <div className="place-operation-mark" role="img" aria-label={operation === 'add' ? 'плюс' : 'минус'} data-testid="model-operation">{operation === 'add' ? '+' : '−'}</div>
         <div className="place-operand-card">
           <strong>Второе число: {b}</strong>
           <div className="place-token-row">
-            {places.map((place) => <span className={`place-token place-token-${place}`} key={`b-${place}`}><b aria-hidden="true">{PLACE_SYMBOLS[place] ?? '◆'}</b><span>{describeTokens(b, place)} · {PLACE_LABELS[place] ?? 'разряд'}</span></span>)}
+            {places.map((place) => <span className={`place-token place-token-${place}`} key={`b-${place}`}><b aria-hidden="true">{PLACE_SYMBOLS[place] ?? '◆'}</b><span>{PLACE_LABELS[place] ?? 'разряд'}: {describeTokens(b, place)}</span></span>)}
           </div>
         </div>
       </div>
@@ -251,7 +261,7 @@ export function PlaceValueExplorer({ a, b, operation, onComplete }: PlaceValueEx
       <div className="model-current-card">
         <div className="model-current-heading">
           <span className="model-step-badge">{isComplete ? 'МОДЕЛЬ ГОТОВА' : `ШАГ ${actionIndex + 1} ИЗ ${actions.length}`}</span>
-          <strong aria-live="polite">{isComplete ? 'Готово! Теперь перенесём решение в запись столбиком.' : action ? getActionPrompt(action) : ''}</strong>
+          <strong aria-live="polite">{isComplete ? 'Готово! Теперь запишем пример столбиком.' : action ? getActionPrompt(action) : ''}</strong>
         </div>
         <div className="model-current-places">
           {places.slice().reverse().map((place) => (

@@ -14,16 +14,16 @@ describe('исследование модели разрядов', () => {
     expect(screen.getByText('1 треугольник — 1 десяток (10 точек)')).toBeInTheDocument()
     expect(screen.getByText(/В разряде десятков сейчас 0/)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /Обменять 10 сотен на 1 десяток/ }))
+    await user.click(screen.getByRole('button', { name: /Обменять одну сотню на один десяток/ }))
     expect(screen.getByText('ШАГ 1 ИЗ 5')).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent(/Ответ не совпал/)
 
-    await user.click(screen.getByRole('button', { name: /Обменять 1 сотню на 10 десятков/ }))
+    await user.click(screen.getByRole('button', { name: /Обменять одну сотню на 10 десятков/ }))
     expect(screen.getByText('ШАГ 2 ИЗ 5')).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Верно! Переходим к следующему шагу.')
     expect(screen.getByText(/10 десятков — 10 треугольников/)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /Обменять 1 десяток на 10 единиц/ }))
+    await user.click(screen.getByRole('button', { name: /Обменять один десяток на 10 единиц/ }))
     expect(screen.getByText(/10 единиц — 10 точек/)).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Верно! Переходим к следующему шагу.')
     await user.click(screen.getByRole('button', { name: /^3$/ }))

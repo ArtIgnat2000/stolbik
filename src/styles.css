@@ -318,7 +318,7 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .warmup-option { min-height: 54px; padding: 10px 14px; border: 1px solid #e3deef; border-radius: 14px; background: #fcfbff; color: #655a9f; font-size: 13px; font-weight: 900; cursor: pointer; }
 .warmup-option:hover { border-color: #bcb2e8; background: #f4f1ff; }
 .warmup-feedback { min-height: 19px; margin: 0; color: #8b879f; font-size: 11px; line-height: 1.45; }
-.place-explorer-card { padding: 22px 18px 18px; border: 1px solid #e6e2f1; border-radius: 22px; background: #fff; box-shadow: var(--card-shadow); }
+.place-explorer-card { padding: 19px 18px 16px; border: 1px solid #e6e2f1; border-radius: 22px; background: #fff; box-shadow: var(--card-shadow); }
 .place-explorer-heading { margin-bottom: 16px; }
 .place-explorer-heading h1 { margin: 0 0 8px; color: #514b79; font-size: clamp(23px, 4vw, 31px); }
 .place-explorer-heading > p:last-child { margin: 0; color: #85879a; font-size: 12px; line-height: 1.55; }
@@ -681,11 +681,10 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .lesson-page .model-current-place strong { font-size: 1.0625rem; }
 .lesson-page .model-current-place-active { border-color: #7560df; background: #f4f1ff; box-shadow: inset 0 0 0 1px #fff; }
 .lesson-page .model-current-place-active > span { color: #514778; font-weight: 900; }
-.lesson-page .model-symbol-guide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0 10px; }
+.lesson-page .model-symbol-guide { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0 10px; }
 .lesson-page .model-symbol-key { display: flex; min-width: 0; min-height: 56px; align-items: center; gap: 10px; padding: 9px 11px; border: 1px solid #e5e0f2; border-radius: 14px; background: #fcfbff; color: #4f5a70; font-size: .9375rem; line-height: 1.4; }
 .lesson-page .model-symbol-key b { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 11px; background: #f0edff; color: #5947af; font-size: 1.25rem; line-height: 1; }
 .lesson-page .model-symbol-key:nth-child(2) b { background: #fff5e8; color: #875629; }
-.lesson-page .model-symbol-key:nth-child(3) { grid-column: 1 / -1; }
 .lesson-page .model-symbol-key:nth-child(3) b { width: auto; min-width: 44px; padding: 0 4px; font-size: .875rem; }
 .lesson-page .model-instruction { margin: 8px 0 0; color: #4f5a70; font-size: 1rem; line-height: 1.5; }
 .lesson-page .model-current-places { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
@@ -749,4 +748,139 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .lesson-page .warmup-model-figure { padding: 7px 3px; }
   .lesson-page .warmup-model-question { width: 26px; height: 26px; }
   .lesson-page .warmup-model-figure figcaption span { font-size: .875rem; }
+}
+
+/* Ноутбук и невысокие экраны: каждая карточка урока должна помещаться в экран без прокрутки.
+   Правила идут последними и повторяют специфичность .lesson-page, поэтому перебивают базовые размеры. */
+@media (min-width: 651px) and (max-height: 1000px) {
+  .lesson-page { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+  .lesson-page .lesson-header { min-height: 50px; margin-bottom: 10px; padding: 5px 4px; }
+
+  /* Общие блоки урока */
+  .lesson-page .lesson-coach-card { margin: 2px 0 12px; padding: 9px 13px; }
+  .lesson-page .lesson-coach-card .owl-illustration { width: 48px !important; height: 48px !important; }
+  .lesson-page .lesson-coach-card p { font-size: .8125rem; line-height: 1.45; }
+  .lesson-page .lesson-title-block { margin-bottom: 10px; }
+  .lesson-page .lesson-title-block h1 { font-size: clamp(21px, 2.8vw, 28px); }
+  .lesson-page .lesson-title-block > p:last-child { font-size: .9375rem; line-height: 1.45; }
+  .lesson-page .column-stage-card { padding: 12px 14px; }
+  .lesson-page .algorithm-note { margin-top: 11px; padding: 10px 12px; }
+  .lesson-page .algorithm-icon { width: 34px; height: 34px; font-size: 20px; }
+  .lesson-page .algorithm-note strong { font-size: .9375rem; }
+  .lesson-page .algorithm-note p { font-size: .8125rem; line-height: 1.45; }
+  .lesson-page .lesson-footer-actions { margin: 12px 0 14px; }
+  .lesson-page .lesson-footer-actions .primary-button { min-height: 50px; }
+  .lesson-page .no-pressure-note { font-size: .8125rem; }
+
+  /* Столбик: компактнее, но цифры остаются крупными */
+  .lesson-page .column-grid { grid-template-columns: 38px repeat(var(--column-count), minmax(40px, 54px)); }
+  .lesson-page .column-sign { width: 38px; font-size: 24px; }
+  .lesson-page .column-sign.operation-sign { font-size: 26px; }
+  .lesson-page .place-label { min-height: 17px; font-size: .6875rem; }
+  .lesson-page .annotation-cell { min-height: 32px; }
+  .lesson-page .annotation-value { font-size: .875rem; }
+  .lesson-page .number-cell { min-height: 46px; font-size: clamp(26px, 4.4vw, 34px); }
+  .lesson-page .answer-cell { min-height: 47px; font-size: clamp(26px, 4.4vw, 34px); }
+
+  /* Разбор примера */
+  .lesson-page .demo-intro-line { margin: 2px 2px 8px; }
+  .lesson-page .demo-column-card { margin-bottom: 9px; }
+  .lesson-page .demo-explanation-card { padding: 12px 14px; }
+  .lesson-page .demo-explanation-card .coach-avatar-small { width: 42px; height: 42px; }
+  .lesson-page .demo-explanation-card .coach-avatar-small .owl-illustration { width: 38px !important; height: 38px !important; }
+  .lesson-page .demo-explanation-card h1 { font-size: 1.1875rem; }
+  .lesson-page .demo-explanation-card p:last-child { font-size: .9375rem; line-height: 1.45; }
+
+  /* Тренировка */
+  .lesson-page .practice-topline { margin: 2px 0 8px; }
+  .lesson-page .practice-topline h1 { font-size: 1.5rem; }
+  .lesson-page .coach-message-card { min-height: 52px; margin-bottom: 9px; padding: 7px 12px; }
+  .lesson-page .coach-message-card .owl-illustration { width: 38px !important; height: 38px !important; }
+  .lesson-page .coach-message-card p { font-size: .875rem; line-height: 1.4; }
+  .lesson-page .practice-column-card { padding-top: 11px; padding-bottom: 9px; }
+  .lesson-page .column-helper-text { margin-top: 6px; font-size: .8125rem; }
+  .lesson-page .keypad { width: min(292px, 100%); gap: 7px; margin: 9px auto 7px; }
+  .lesson-page .keypad-button { min-height: 44px; font-size: 19px; }
+  .lesson-page .lesson-help-row { width: min(420px, 100%); }
+  .lesson-page .hint-button { min-height: 44px; font-size: .875rem; }
+  .lesson-page .live-step-note { font-size: .8125rem; }
+  .lesson-page .hint-answer-card { margin: 9px auto 12px; padding: 10px 12px; }
+  .lesson-page .error-action-row { margin: 12px auto 16px; }
+
+  /* Экран «повторяем» */
+  .lesson-page .warmup-card { padding: 14px 16px 12px; }
+  .lesson-page .warmup-card h1 { font-size: clamp(19px, 2.6vw, 24px); }
+  .lesson-page .warmup-intro { font-size: .8125rem; }
+  .lesson-page .warmup-model-diagram { margin: 9px auto 5px; padding: 7px; }
+  .lesson-page .warmup-model-figure { min-height: 96px; padding: 6px; }
+  .lesson-page .warmup-unit-mark { width: 40px; height: 40px; }
+  .lesson-page .warmup-ten-mark { width: min(100%, 92px); height: 74px; }
+  .lesson-page .warmup-model-question { width: 28px; height: 28px; font-size: 1rem; }
+  .lesson-page .warmup-options { gap: 7px; margin: 10px 0 7px; }
+  .lesson-page .warmup-option { min-height: 46px; font-size: .9375rem; }
+  .lesson-page .warmup-feedback { min-height: 30px; font-size: .875rem; }
+
+  /* Экран модели разрядов */
+  .lesson-page .place-explorer-card { padding: 14px 15px 12px; }
+  .lesson-page .place-explorer-heading { margin-bottom: 10px; }
+  .lesson-page .place-explorer-heading h1 { font-size: clamp(19px, 2.6vw, 24px); }
+  .lesson-page .model-symbol-guide { gap: 7px; margin: 8px 0 7px; }
+  .lesson-page .model-symbol-key { min-height: 48px; padding: 6px 9px; font-size: .8125rem; }
+  .lesson-page .model-symbol-key b { width: 30px; height: 30px; font-size: 1rem; }
+  .lesson-page .model-symbol-key:nth-child(3) b { min-width: 38px; font-size: .8125rem; }
+  .lesson-page .model-instruction { font-size: .875rem; }
+  .lesson-page .place-operands { gap: 7px; }
+  .lesson-page .place-operand-card { padding: 8px 9px; }
+  .lesson-page .place-operand-card > strong { margin-bottom: 5px; font-size: .875rem; }
+  .lesson-page .place-token { gap: 6px; font-size: .8125rem; }
+  .lesson-page .place-token b { width: 24px; height: 24px; font-size: 14px; }
+  .lesson-page .model-current-card { margin-top: 8px; padding: 10px 11px; }
+  .lesson-page .model-current-heading { gap: 4px; }
+  .lesson-page .model-current-heading strong { font-size: .9375rem; line-height: 1.4; }
+  .lesson-page .model-current-places { gap: 6px; margin: 8px 0; }
+  .lesson-page .model-current-place { min-height: 44px; }
+  .lesson-page .model-current-place > span { font-size: .75rem; }
+  .lesson-page .model-current-place strong { font-size: .9375rem; }
+  .lesson-page .model-choice-button { min-height: 44px; font-size: 17px; }
+  .lesson-page .model-choice-button-text { min-height: 40px; padding: 7px 10px; font-size: .8125rem; }
+  .lesson-page .model-feedback { min-height: 38px; margin-top: 8px; padding: 7px 10px; font-size: .875rem; }
+  .lesson-page .model-feedback-icon { width: 24px; height: 24px; font-size: .875rem; }
+  .lesson-page .model-hint-button { min-height: 40px; }
+  .lesson-page .model-finish-button { min-height: 46px; margin-top: 9px; }
+  .lesson-page .model-finish-note { font-size: .875rem; }
+
+  /* Самопроверка и завершение урока */
+  .lesson-page .question-complete-card { gap: 7px; margin: 9px auto 12px; padding: 13px 16px; }
+  .lesson-page .question-complete-card h2 { font-size: 1.1875rem; }
+  .lesson-page .question-complete-card p { font-size: .875rem; }
+  .lesson-page .self-check-list { margin: 2px 0 5px; padding: 9px 12px 9px 32px; font-size: .875rem; }
+  .lesson-page .self-check-list li + li { margin-top: 5px; }
+  .lesson-page .self-check-button { min-height: 44px; font-size: .9375rem; }
+  .lesson-page .lesson-finish-card { margin: 14px auto; padding: 18px 22px 20px; }
+  .lesson-page .finish-illustration { width: 108px; height: 100px; }
+  .lesson-page .finish-illustration .owl-illustration { width: 96px !important; height: 96px !important; }
+  .lesson-page .lesson-finish-card h1 { font-size: clamp(21px, 3.2vw, 28px); }
+  .lesson-page .finish-description { font-size: .9375rem; }
+  .lesson-page .reflection-panel { margin: 10px 0 11px; padding: 10px 12px; }
+  .lesson-page .reflection-option { min-height: 42px; font-size: .8125rem; }
+  .lesson-page .finish-rewards { margin: 10px 0 12px; }
+  .lesson-page .finish-rewards span { padding: 7px 10px; font-size: .8125rem; }
+}
+
+/* Совсем невысокие ноутбучные экраны: убираем ещё несколько десятков пикселей */
+@media (min-width: 651px) and (max-height: 740px) {
+  .lesson-page .lesson-header { min-height: 46px; margin-bottom: 8px; }
+  .lesson-page .keypad { width: min(268px, 100%); }
+  .lesson-page .keypad-button { min-height: 38px; font-size: 18px; }
+  .lesson-page .number-cell { min-height: 42px; }
+  .lesson-page .answer-cell { min-height: 43px; }
+  .lesson-page .annotation-cell { min-height: 29px; }
+  .lesson-page .place-label { min-height: 15px; }
+  .lesson-page .model-current-place { min-height: 40px; }
+  .lesson-page .model-choice-button { min-height: 38px; }
+  .lesson-page .warmup-option { min-height: 42px; }
+  .lesson-page .warmup-model-figure { min-height: 86px; }
+  .lesson-page .warmup-ten-mark { height: 66px; }
+  .lesson-page .finish-illustration { width: 92px; height: 86px; }
+  .lesson-page .finish-illustration .owl-illustration { width: 82px !important; height: 82px !important; }
 }
