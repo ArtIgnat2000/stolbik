@@ -9,23 +9,46 @@ describe('исследование модели разрядов', () => {
     const onComplete = vi.fn()
     render(<PlaceValueExplorer a={500} b={127} operation="subtract" onComplete={onComplete} />)
 
-    expect(screen.getByText(/одна сотня равна десяти десяткам/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Вычитаем по разрядам' })).toBeInTheDocument()
+    expect(screen.getByText('1 точка — 1 единица')).toBeInTheDocument()
+    expect(screen.getByText('1 треугольник — 1 десяток (10 точек)')).toBeInTheDocument()
+    expect(screen.getByText(/В разряде десятков сейчас 0/)).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: /Обменять 10 сотен на 1 десяток/ }))
     expect(screen.getByText('ШАГ 1 ИЗ 5')).toBeInTheDocument()
-    expect(screen.getByText(/Ошибки здесь ничего не отнимают/)).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(/Ответ не совпал/)
 
     await user.click(screen.getByRole('button', { name: /Обменять 1 сотню на 10 десятков/ }))
-    expect(screen.getByText('10 △ = 1 сотня')).toBeInTheDocument()
+    expect(screen.getByText('ШАГ 2 ИЗ 5')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Верно! Переходим к следующему шагу.')
+    expect(screen.getByText(/10 десятков — 10 треугольников/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Обменять 1 десяток на 10 единиц/ }))
-    expect(screen.getByText('10 • = 1 △')).toBeInTheDocument()
+    expect(screen.getByText(/10 единиц — 10 точек/)).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Верно! Переходим к следующему шагу.')
     await user.click(screen.getByRole('button', { name: /^3$/ }))
     await user.click(screen.getByRole('button', { name: /^7$/ }))
     await user.click(screen.getByRole('button', { name: /^3$/ }))
 
-    expect(screen.queryByText('10 • = 1 △')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Верно! Модель готова.')
     expect(screen.getByRole('button', { name: /Перейти к записи в столбик/ })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Перейти к записи в столбик/ }))
     expect(onComplete).toHaveBeenCalledOnce()
+  })
+
+  it('понятно объясняет действие и сообщает, верен ли ответ', async () => {
+    const user = userEvent.setup()
+    render(<PlaceValueExplorer a={42} b={22} operation="add" onComplete={vi.fn()} />)
+
+    expect(screen.getByRole('heading', { name: 'Складываем по разрядам' })).toBeInTheDocument()
+    expect(screen.getByText('Сложи единицы: 2 + 2. Сколько получится?')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^5$/ }))
+    expect(screen.getByRole('status')).toHaveTextContent(/Ответ не совпал/)
+    expect(screen.getByText('ШАГ 1 ИЗ 2')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^4$/ }))
+    expect(screen.getByRole('status')).toHaveTextContent('Верно! Переходим к следующему шагу.')
+    expect(screen.getByText('Сложи десятки: 4 + 2. Сколько получится?')).toBeInTheDocument()
   })
 })
