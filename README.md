@@ -24,7 +24,7 @@ npm run preview
 VITE_BASE=/stolbik/ npm run build
 ```
 
-GitHub Actions публикует сборку в GitHub Pages после push в `main` или в текущую Arena-ветку. Адрес сайта: <https://artignat2000.github.io/stolbik/>.
+GitHub Actions собирает приложение после push в `main` и в любую Arena-ветку (`arena/**`); в GitHub Pages публикуется только `main`. Адрес сайта: <https://artignat2000.github.io/stolbik/>.
 
 Короткая версия приложения и SHA сборки выводятся в родительском разделе. SHA можно передать через `VITE_COMMIT_SHA` или `GITHUB_SHA`.
 

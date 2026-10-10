@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - arena/c5abd99e-stolbik
+      - 'arena/**'
   workflow_dispatch:
 
 permissions:
@@ -13,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages
+  group: github-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,11 +35,29 @@ jobs:
       - name: Установить зависимости
         run: npm ci
 
+      - name: Проверить типы
+        run: npm run typecheck
+
+      - name: Проверить генераторы заданий
+        run: npm run content:check
+
+      - name: Проверить арифметический движок
+        run: npm run test:engine
+
+      - name: Проверить интерфейс и сценарии урока
+        run: npm run test:smoke
+
+      - name: Проверить локальное хранилище
+        run: npm run audit:storage
+
       - name: Собрать приложение для GitHub Pages
         run: npm run build
         env:
           VITE_BASE: /stolbik/
           VITE_COMMIT_SHA: ${{ github.sha }}
+
+      - name: Проверить стартовую PWA-оболочку
+        run: npm run test:boot
 
       - name: Загрузить сборку Pages
         uses: actions/upload-pages-artifact@v3
