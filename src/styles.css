@@ -273,7 +273,6 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .coach-message-card p { margin: 0; color: #6f7188; font-size: 12px; font-weight: 700; line-height: 1.42; }
 .practice-column-card { padding-top: 17px; padding-bottom: 13px; transition: border .16s ease; }
 .practice-column-error { border-color: #ead4a9; }
-.column-helper-text { margin: 8px 0 0; color: #aaa8b8; text-align: center; font-size: 10px; font-weight: 700; }
 .keypad { display: grid; width: min(330px, 100%); grid-template-columns: repeat(3, 1fr); gap: 9px; margin: 14px auto 12px; }
 .keypad-button { min-height: 56px; border: 1px solid #e5e2ef; border-radius: 16px; background: #fff; color: #3f4662; font-size: 24px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 11px rgba(55, 49, 96, .035); }
 .keypad-button:hover:not(:disabled) { border-color: #c9c0ee; background: #f7f5ff; }
@@ -282,12 +281,11 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .keypad-zero { grid-column: 2; }
 .keypad-spacer { grid-column: 1; grid-row: 4; }
 .keypad-erase { grid-column: 3; grid-row: 4; background: #fff9f2; color: #b47d4b; font-size: 25px; }
-.lesson-help-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: min(480px, 100%); margin: 0 auto; }
+.lesson-help-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; width: min(480px, 100%); margin: 0 auto; }
 .hint-button { display: inline-flex; min-height: 50px; align-items: center; gap: 8px; padding: 0 15px; border: 1px solid #eedda9; border-radius: 15px; background: #fff9e9; color: #906b2f; font-size: 13px; font-weight: 900; cursor: pointer; }
 .hint-button:hover { background: #fff3d2; }
 .hint-button > span:first-child { font-size: 20px; }
 .hint-button small { color: #ad935d; font-size: 9px; font-weight: 700; }
-.live-step-note { color: #aaa9b7; text-align: right; font-size: 10px; }
 .hint-answer-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 12px auto 25px; padding: 13px 15px; border: 1px solid #f0dfaa; border-radius: 15px; background: #fffaf0; }
 .hint-answer-card strong { color: #755a27; font-size: 13px; }
 .hint-answer-card p { margin: 4px 0 0; color: #96835f; font-size: 10px; line-height: 1.4; }
@@ -349,7 +347,74 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .model-finish-note { margin: 0 0 10px; color: #6c8b7c; font-size: 11px; line-height: 1.45; }
 .model-finish-button { display: flex; width: min(360px, 100%); margin: 13px auto 0; }
 .model-hint-button { display: flex; min-height: 48px; align-items: center; justify-content: center; margin: 3px auto 0; }
+/* Наглядная модель разрядов: точки, треугольники и квадраты вместо абстрактных цифр */
+.place-tokens { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 3px; }
+.place-tokens-dots { display: grid; grid-template-columns: repeat(5, var(--place-token-dot)); justify-content: center; gap: 3px; }
+.place-tokens-sm { --place-token-dot: 9px; --place-token-triangle: 15px; --place-token-square: 17px; }
+.place-tokens-md { --place-token-dot: 12px; --place-token-triangle: 22px; --place-token-square: 25px; }
+.place-tokens-lg { --place-token-dot: 15px; --place-token-triangle: 30px; --place-token-square: 34px; }
+.place-token { position: relative; flex: 0 0 auto; }
+.place-token-dot { width: var(--place-token-dot); height: var(--place-token-dot); border-radius: 50%; background: currentColor; }
+.place-token-triangle { width: var(--place-token-triangle); height: auto; aspect-ratio: 120 / 110; }
+.place-token-square { width: var(--place-token-square); height: auto; aspect-ratio: 1 / 1; }
+.place-token-body { stroke-width: 5; stroke-linejoin: round; }
+.place-token-pip { stroke: none; }
+.place-tone-first { color: #7560df; }
+.place-tone-first .place-token-body { fill: #ece8ff; stroke: #6f5ccf; }
+.place-tone-first .place-token-pip { fill: #4a3f86; }
+.place-tone-second { color: #d1904a; }
+.place-tone-second .place-token-body { fill: #fff1dd; stroke: #cf8a42; }
+.place-tone-second .place-token-pip { fill: #8a5a22; }
+.place-tone-answer { color: #3f8f6b; }
+.place-tone-answer .place-token-body { fill: #e2f4ea; stroke: #3f8f6b; }
+.place-tone-answer .place-token-pip { fill: #25614a; }
+.place-tone-carry { color: #5b8fbf; }
+.place-tone-carry .place-token-body { fill: #e6f0fa; stroke: #5b8fbf; }
+.place-tone-carry .place-token-pip { fill: #2f5f88; }
+.place-tone-muted { color: #b9b7c6; }
+.place-tone-muted .place-token-body { fill: #f1f0f5; stroke: #c3c1d0; }
+.place-tone-muted .place-token-pip { fill: #a9a8b6; }
+.place-token-crossed { opacity: .7; }
+.place-token-crossed::after { position: absolute; top: 50%; left: -2px; right: -2px; height: 2px; border-radius: 2px; background: #d0703c; content: ''; transform: rotate(-14deg); }
+.place-board { margin-top: 10px; padding: 12px 12px 14px; border: 1px solid #e8e5f0; border-radius: 20px; background: #fff; box-shadow: 0 12px 32px rgba(56, 48, 109, .06); }
+.place-board-head { display: grid; gap: 8px; margin-bottom: 10px; }
+.place-board-heading { display: grid; gap: 2px; }
+.place-board-sub { margin: 0; color: #8c8ea0; font-size: 10px; line-height: 1.4; }
+.place-board-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.place-board-key { display: inline-flex; min-height: 26px; align-items: center; gap: 6px; padding: 4px 9px; border: 1px solid #ece9f4; border-radius: 11px; background: #fcfbff; color: #6a6c80; font-size: 10px; font-weight: 700; }
+.place-board-cells { display: grid; grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); gap: 7px; }
+.place-cell { display: grid; align-content: start; gap: 5px; padding: 8px 6px; border: 1px solid #ece9f4; border-radius: 14px; background: #fdfcff; }
+.place-cell-active { border-color: #b7a9f0; background: #f6f3ff; box-shadow: inset 0 0 0 1px #fff; }
+.place-cell-name { color: #6d6a86; font-size: 10px; font-weight: 900; letter-spacing: .04em; text-align: center; }
+.place-cell-active .place-cell-name { color: #5947af; }
+.place-cell-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; min-height: 17px; }
+.place-cell-digit { min-width: 13px; color: #4c4f68; font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.place-cell-sign { color: #a3a1b3; font-size: 11px; font-weight: 900; }
+.place-cell-row-answer { padding: 2px 6px; border-radius: 9px; background: #f2faf5; }
+.place-cell-row-answer .place-cell-digit { color: #2f6f4b; }
+.place-cell-empty { color: #bdbcc9; font-size: 9px; }
+.place-task { margin-top: 10px; padding: 11px 12px 12px; border: 1px solid #ded6fb; border-radius: 16px; background: linear-gradient(180deg, #f7f4ff, #fdfcff); }
+.place-task-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.place-task-badge { padding: 3px 9px; border-radius: 99px; background: #7560df; color: #fff; font-size: 9px; font-weight: 900; letter-spacing: .1em; }
+.place-task-place { color: #4b3f8f; font-size: 14px; letter-spacing: .03em; text-transform: uppercase; }
+.place-task-model { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; padding: 10px 8px; border-radius: 13px; background: #fff; box-shadow: inset 0 0 0 1px #efeafd; }
+.place-task-op { color: #6f6c88; font-size: 15px; font-weight: 900; }
+.place-task-slot { display: grid; min-width: 34px; min-height: 34px; place-items: center; border: 2px dashed #b7a9f0; border-radius: 10px; color: #7560df; font-size: 17px; font-weight: 900; }
+.place-task-question { margin: 9px 0 0; color: #464866; font-size: 12px; font-weight: 800; line-height: 1.45; }
+.place-task-exchange { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border: 1px dashed #d9cfb8; border-radius: 12px; background: #fffaf0; }
+.place-task-exchange-step { display: inline-flex; align-items: center; gap: 6px; }
+.place-task-arrow { color: #a5802f; font-size: 14px; font-weight: 900; }
+.place-task-exchange-text { color: #7a6134; font-size: 11px; font-weight: 800; }
+.place-task-why { margin: 8px 0 0; color: #6f7188; font-size: 11px; line-height: 1.5; }
+.place-task-instruction { margin: 6px 0 0; color: #5947af; font-size: 11px; font-weight: 900; }
+.place-stepper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin: 12px 0 2px; }
+.place-chip { display: inline-flex; min-height: 28px; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid #e7e4f0; border-radius: 99px; background: #fff; color: #9a99ab; font-size: 10px; font-weight: 900; }
+.place-chip-mark { font-size: 10px; }
+.place-chip-current { border-color: #b7a9f0; background: #f2efff; color: #5947af; }
+.place-chip-done { border-color: #cfe6d8; background: #f2faf5; color: #3f7a5c; }
 .self-check-list { width: 100%; max-height: 210px; overflow: auto; margin: 5px 0 7px; padding: 10px 13px 10px 29px; border: 1px solid #e6efe8; border-radius: 13px; background: #fff; color: #6e7e74; text-align: left; font-size: 10px; line-height: 1.45; }
+.self-check-step-model { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 4px; }
+.self-check-step-arrow { color: #7fa98f; font-size: 11px; font-weight: 900; }
 .self-check-list li + li { margin-top: 5px; }
 .self-check-button { width: min(320px, 100%); }
 .reflection-panel { display: grid; gap: 10px; margin: 17px 0 18px; padding: 14px; border: 1px solid #e8e4f3; border-radius: 16px; background: #fcfbff; text-align: left; }
@@ -570,7 +635,6 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .lesson-help-row { align-items: start; }
   .hint-button { min-height: 48px; padding: 0 11px; font-size: 11px; }
   .hint-button small { display: none; }
-  .live-step-note { padding-top: 15px; font-size: 9px; }
   .hint-answer-card { align-items: start; flex-direction: column; }
   .hint-insert-button { width: 100%; }
   .lesson-finish-card { margin-top: 20px; padding: 23px 18px 27px; }
@@ -654,7 +718,6 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .lesson-page .practice-topline h1 span { color: #525e73; font-size: 1.125rem; }
 .lesson-page .coach-message-card { align-items: flex-start; padding: 12px 14px; }
 .lesson-page .coach-message-card p { min-width: 0; color: #4e596f; font-size: 1rem; line-height: 1.5; overflow-wrap: anywhere; }
-.lesson-page .column-helper-text { color: #525e73; font-size: .9375rem; line-height: 1.4; }
 .lesson-page .warmup-card h1,
 .lesson-page .place-explorer-heading h1 { font-size: clamp(1.5rem, 4vw, 2rem); line-height: 1.2; }
 .lesson-page .warmup-intro,
@@ -706,7 +769,6 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .lesson-page .reflection-feedback { color: #3f7058; font-size: .9375rem; line-height: 1.45; }
 .lesson-page .hint-button { color: #72531f; font-size: 1rem; }
 .lesson-page .hint-button small { color: #745d2b; font-size: .75rem; }
-.lesson-page .live-step-note { max-width: 180px; color: #4f5a70; font-size: .875rem; line-height: 1.4; }
 .lesson-page .hint-answer-card strong { color: #614a22; font-size: 1rem; }
 .lesson-page .hint-answer-card p { color: #625638; font-size: .9375rem; line-height: 1.5; }
 .lesson-page .hint-insert-button { min-height: 48px; color: #514019; font-size: .9375rem; }
@@ -719,6 +781,41 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .lesson-page .self-check-list li::marker { color: #3f7058; font-weight: 900; }
 .lesson-page .self-check-step-title { display: block; color: #354e3d; font-size: 1rem; font-weight: 900; }
 .lesson-page .self-check-step-detail { display: block; color: #45594c; font-size: 1rem; line-height: 1.5; overflow-wrap: anywhere; }
+.lesson-page .self-check-step-model { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.lesson-page .self-check-step-arrow { color: #3f7058; font-size: .9375rem; }
+.lesson-page .self-check-step-model .place-tokens-sm { --place-token-dot: 11px; --place-token-triangle: 19px; --place-token-square: 21px; }
+
+/* Наглядная модель: фишки разрядов должны быть такими же крупными, как и текст */
+.lesson-page .place-board { margin-top: 12px; padding: 14px 14px 16px; }
+.lesson-page .place-board-sub { color: #4f5a70; font-size: .9375rem; line-height: 1.45; }
+.lesson-page .place-board-legend { gap: 8px; }
+.lesson-page .place-board-key { min-height: 40px; padding: 6px 11px; color: #4f5a70; font-size: .875rem; }
+.lesson-page .place-board-cells { gap: 9px; }
+.lesson-page .place-cell { gap: 7px; padding: 10px 8px; border-radius: 16px; }
+.lesson-page .place-cell-name { color: #514778; font-size: .9375rem; }
+.lesson-page .place-cell-row { min-height: 22px; }
+.lesson-page .place-cell-digit { min-width: 16px; color: #3f4460; font-size: 1.0625rem; }
+.lesson-page .place-cell-sign { font-size: .9375rem; }
+.lesson-page .place-cell-empty { font-size: .8125rem; }
+.lesson-page .place-task { margin-top: 12px; padding: 13px 14px 14px; }
+.lesson-page .place-task-badge { padding: 4px 10px; font-size: .6875rem; }
+.lesson-page .place-task-place { color: #4b3f8f; font-size: 1.25rem; }
+.lesson-page .place-task-model { gap: 10px; padding: 12px 10px; }
+.lesson-page .place-task-op { font-size: 1.25rem; }
+.lesson-page .place-task-slot { min-width: 44px; min-height: 44px; font-size: 1.375rem; }
+.lesson-page .place-task-question { margin-top: 10px; color: #3f4460; font-size: 1.0625rem; line-height: 1.5; }
+.lesson-page .place-task-exchange { gap: 10px; margin-top: 10px; padding: 9px 11px; }
+.lesson-page .place-task-exchange-text { font-size: .9375rem; }
+.lesson-page .place-task-why { color: #4f5a70; font-size: 1rem; line-height: 1.5; }
+.lesson-page .place-task-instruction { font-size: 1rem; }
+.lesson-page .place-stepper { gap: 8px; margin: 14px 0 4px; }
+.lesson-page .place-chip { min-height: 34px; padding: 4px 12px; color: #525e73; font-size: .875rem; }
+.lesson-page .place-chip-current { color: #5745a8; }
+.lesson-page .place-chip-done { color: #3f7058; }
+.lesson-page .place-task-model .place-tokens-md { --place-token-dot: 14px; --place-token-triangle: 26px; --place-token-square: 30px; }
+.lesson-page .place-task-exchange .place-tokens-sm { --place-token-dot: 11px; --place-token-triangle: 19px; --place-token-square: 21px; }
+.lesson-page .place-cell .place-tokens-sm { --place-token-dot: 11px; --place-token-triangle: 19px; --place-token-square: 21px; }
+.lesson-page .place-board-key .place-tokens-sm { --place-token-dot: 12px; --place-token-triangle: 20px; --place-token-square: 23px; }
 .lesson-page .self-check-button { min-height: 52px; font-size: 1rem; }
 .lesson-page .finish-description { color: #4f5a70; font-size: 1rem; line-height: 1.55; }
 .lesson-page .finish-rewards span { color: #5b4c93; font-size: .875rem; }
@@ -730,8 +827,13 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .lesson-page .self-check-list { padding: 12px 12px 12px 34px; }
   .lesson-page .place-token { font-size: .875rem; }
   .lesson-page .lesson-help-row { align-items: center; }
-  .lesson-page .live-step-note { padding-top: 0; }
   .lesson-page .reflection-option { min-height: 52px; }
+  .lesson-page .place-board-legend { gap: 6px; }
+  .lesson-page .place-board-key { min-height: 36px; padding: 4px 9px; font-size: .8125rem; }
+  .lesson-page .place-board-cells { grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); }
+  .lesson-page .place-cell { padding: 8px 5px; }
+  .lesson-page .place-task-model { gap: 7px; padding: 10px 6px; }
+  .lesson-page .place-stepper { gap: 6px; }
   .lesson-page .place-token-row { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
   .lesson-page .model-current-places { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lesson-page .model-symbol-guide { grid-template-columns: 1fr; }
@@ -798,12 +900,37 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .lesson-page .coach-message-card .owl-illustration { width: 38px !important; height: 38px !important; }
   .lesson-page .coach-message-card p { font-size: .875rem; line-height: 1.4; }
   .lesson-page .practice-column-card { padding-top: 11px; padding-bottom: 9px; }
-  .lesson-page .column-helper-text { margin-top: 6px; font-size: .8125rem; }
+
+  /* Наглядная модель: компактнее, но фишки остаются различимыми */
+  .lesson-page .place-board { margin-top: 9px; padding: 10px 11px 12px; }
+  .lesson-page .place-board-head { gap: 6px; margin-bottom: 8px; }
+  .lesson-page .place-board-sub { font-size: .8125rem; }
+  .lesson-page .place-board-key { min-height: 34px; padding: 4px 9px; font-size: .8125rem; }
+  .lesson-page .place-board-cells { gap: 7px; }
+  .lesson-page .place-cell { gap: 5px; padding: 7px 6px; }
+  .lesson-page .place-cell-name { font-size: .8125rem; }
+  .lesson-page .place-cell-row { min-height: 19px; }
+  .lesson-page .place-cell-digit { font-size: .9375rem; }
+  .lesson-page .place-task { margin-top: 9px; padding: 10px 11px 11px; }
+  .lesson-page .place-task-head { margin-bottom: 6px; }
+  .lesson-page .place-task-place { font-size: 1.0625rem; }
+  .lesson-page .place-task-model { gap: 8px; padding: 9px 8px; }
+  .lesson-page .place-task-slot { min-width: 38px; min-height: 38px; font-size: 1.125rem; }
+  .lesson-page .place-task-question { margin-top: 8px; font-size: .9375rem; }
+  .lesson-page .place-task-exchange { margin-top: 8px; padding: 7px 9px; }
+  .lesson-page .place-task-why { font-size: .875rem; }
+  .lesson-page .place-task-instruction { font-size: .875rem; }
+  .lesson-page .place-stepper { margin: 10px 0 3px; }
+  .lesson-page .place-chip { min-height: 30px; padding: 3px 10px; font-size: .8125rem; }
+  .lesson-page .place-cell .place-tokens-sm { --place-token-dot: 9px; --place-token-triangle: 16px; --place-token-square: 18px; }
+  .lesson-page .place-task-model .place-tokens-md { --place-token-dot: 12px; --place-token-triangle: 22px; --place-token-square: 25px; }
+  .lesson-page .place-task-exchange .place-tokens-sm { --place-token-dot: 9px; --place-token-triangle: 16px; --place-token-square: 18px; }
+  .lesson-page .self-check-step-model { margin-top: 4px; }
+
   .lesson-page .keypad { width: min(292px, 100%); gap: 7px; margin: 9px auto 7px; }
   .lesson-page .keypad-button { min-height: 44px; font-size: 19px; }
   .lesson-page .lesson-help-row { width: min(420px, 100%); }
   .lesson-page .hint-button { min-height: 44px; font-size: .875rem; }
-  .lesson-page .live-step-note { font-size: .8125rem; }
   .lesson-page .hint-answer-card { margin: 9px auto 12px; padding: 10px 12px; }
   .lesson-page .error-action-row { margin: 12px auto 16px; }
 
@@ -876,6 +1003,17 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .lesson-page .answer-cell { min-height: 43px; }
   .lesson-page .annotation-cell { min-height: 29px; }
   .lesson-page .place-label { min-height: 15px; }
+  .lesson-page .place-board { margin-top: 8px; padding: 9px 10px 10px; }
+  .lesson-page .place-board-key { min-height: 30px; }
+  .lesson-page .place-cell { gap: 4px; padding: 6px 5px; }
+  .lesson-page .place-cell-row { min-height: 17px; }
+  .lesson-page .place-task { margin-top: 8px; padding: 9px 10px 10px; }
+  .lesson-page .place-task-model { padding: 7px 6px; }
+  .lesson-page .place-task-slot { min-width: 34px; min-height: 34px; }
+  .lesson-page .place-stepper { margin: 8px 0 2px; }
+  .lesson-page .place-chip { min-height: 28px; }
+  .lesson-page .place-cell .place-tokens-sm { --place-token-dot: 8px; --place-token-triangle: 14px; --place-token-square: 16px; }
+  .lesson-page .place-task-model .place-tokens-md { --place-token-dot: 11px; --place-token-triangle: 19px; --place-token-square: 22px; }
   .lesson-page .model-current-place { min-height: 40px; }
   .lesson-page .model-choice-button { min-height: 38px; }
   .lesson-page .warmup-option { min-height: 42px; }

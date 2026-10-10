@@ -61,6 +61,13 @@ describe('первый запуск и короткий урок', () => {
     await user.click(screen.getByRole('button', { name: /Следующий шаг/ }))
     await user.click(screen.getByRole('button', { name: /Начать тренировку/ }))
 
+    // Наглядная модель под столбиком: фишки, задание текущего разряда и порядок разрядов
+    expect(screen.getByTestId('place-board')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Значение фишек' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Разряды по порядку' })).toBeInTheDocument()
+    expect(screen.queryByText(/Шаг \d+ из/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/единицы первыми/)).not.toBeInTheDocument()
+
     for (let question = 1; question <= 5; question += 1) {
       await solveCurrentExample(user)
       const selfCheck = await screen.findByRole('list', { name: 'Самопроверка по разрядам' })

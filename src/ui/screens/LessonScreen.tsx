@@ -6,8 +6,12 @@ import type { ChildProfile } from '../../state/profile'
 import { ColumnDisplay } from '../components/ColumnDisplay'
 import { Keypad } from '../components/Keypad'
 import { Owl } from '../components/Owl'
+import { PlaceTokens, placeTokensLabel } from '../components/PlaceTokens'
+import { PlaceStepper } from '../components/PlaceStepper'
+import { PlaceValueBoard } from '../components/PlaceValueBoard'
 import { PlaceValueExplorer } from '../components/PlaceValueExplorer'
 import { getSelfCheckStepText, getSelfCheckStepTitle } from './lessonSelfCheck'
+import { placeTitleLower } from '../placeNames'
 import { plural, EXAMPLES } from '../plural'
 
 interface LessonScreenProps {
@@ -68,8 +72,8 @@ function WarmupPlaceValueDiagram() {
 function getPromptHint(step: ColumnStep, operation: 'add' | 'subtract'): string {
   if (step.isFinalCarry) return `Перенесённую единицу запиши в разряд ${step.placeName}.`
   if (operation === 'add') {
-    const carryNote = step.carryIn > 0 ? ' Не забудь прибавить ещё одну перенесённую единицу.' : ''
-    return `Сколько будет ${step.aDigit} + ${step.bDigit}?${carryNote} Если единиц получится больше девяти, подумай, как сгруппировать их по разрядам.`
+    const carryNote = step.carryIn > 0 ? ' Не забудь прибавить ещё одну фишку из переноса.' : ''
+    return `Сколько будет ${step.aDigit} + ${step.bDigit}?${carryNote} Если получится десять и больше, подумай, как сгруппировать фишки по разрядам.`
   }
   if (step.borrow) {
     const zeroNote = step.borrow.fromPlace > step.place + 1 ? ' При размене каждый промежуточный ноль станет 9 в своём разряде.' : ''
@@ -175,8 +179,9 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
       onRecordCorrect(profile.id, levelId, wasIndependent, hintUsed)
       setCoachMessage(wasIndependent ? 'Самостоятельно и верно! Здорово получилось 🎉' : 'Готово! Ты разобрался и довёл пример до конца. Так держать!')
     } else {
+      const nextStep = inputSteps[stepIndex + 1]
       setStepIndex((index) => index + 1)
-      setCoachMessage('Верно! Теперь посмотрим на следующий разряд.')
+      setCoachMessage(nextStep ? `Верно! Теперь считаем ${placeTitleLower(nextStep.place)}.` : 'Верно!')
     }
   }
 
@@ -230,7 +235,7 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
     setSelfCheckAck(false)
     setErrorText(null)
     setStage('practice')
-    setCoachMessage('Решаем справа налево. Ты можешь попросить подсказку в любой момент.')
+    setCoachMessage('Решаем справа налево: сначала единицы. Фишки под столбиком показывают, из чего состоит каждая цифра.')
   }
 
   const continueFromQuestion = () => {
@@ -346,6 +351,12 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
           <div className="column-stage-card demo-column-card">
             <ColumnDisplay analysis={analysis} answers={demoAnswers} activePlace={activePlace} visibleSteps={demoVisibleSteps} demo />
           </div>
+          <PlaceValueBoard
+            analysis={analysis}
+            answers={demoAnswers}
+            activePlace={activePlace}
+            currentStep={inputSteps[demoIndex] ?? null}
+          />
           <div className="demo-explanation-card" aria-live="polite">
             <div className="coach-avatar-small"><Owl size={48} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /></div>
             <div><p className="eyebrow">ФИКСИРУЕМ НАЙДЕННЫЙ СПОСОБ</p><h1 id="demo-title">{inputSteps[demoIndex]?.isFinalCarry ? 'Записываем перенос' : `Разряд ${inputSteps[demoIndex]?.placeName ?? ''}`}</h1><p>{inputSteps[demoIndex] ? describeStep(inputSteps[demoIndex]!) : 'Сопоставь модель с записью по разрядам.'}</p></div>
@@ -370,8 +381,13 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
           )}
           <div className={`column-stage-card practice-column-card${errorText ? ' practice-column-error' : ''}`}>
             <ColumnDisplay analysis={analysis} answers={answers} activePlace={activePlace} visibleSteps={visibleSteps} />
-            {!questionComplete && <p className="column-helper-text">Считай разряд {currentStep.placeName}.</p>}
           </div>
+          <PlaceValueBoard
+            analysis={analysis}
+            answers={answers}
+            activePlace={activePlace}
+            currentStep={questionComplete ? null : currentStep}
+          />
 
           {errorText ? (
             <div className="error-action-row"><span className="soft-correction"><span aria-hidden="true">💛</span> Ошибка — это подсказка, не беда.</span><button className="primary-button compact-button" type="button" onClick={dismissError}>Понятно, попробую ещё раз</button></div>
@@ -385,6 +401,27 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
                   <li key={step.place}>
                     <span className="self-check-step-title">{getSelfCheckStepTitle(step)}</span>
                     <span className="self-check-step-detail">{getSelfCheckStepText(step, example.operation)}</span>
+                    <span className="self-check-step-model">
+                      <PlaceTokens
+                        place={step.place}
+                        count={step.expectedDigit}
+                        tone="answer"
+                        size="sm"
+                        label={placeTokensLabel(step.place, step.expectedDigit)}
+                      />
+                      {step.carryOut > 0 && (
+                        <>
+                          <span className="self-check-step-arrow" aria-hidden="true">→</span>
+                          <PlaceTokens
+                            place={step.place + 1}
+                            count={step.carryOut}
+                            tone="carry"
+                            size="sm"
+                            label={placeTokensLabel(step.place + 1, step.carryOut)}
+                          />
+                        </>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ol>
@@ -393,10 +430,10 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
             </section>
           ) : (
             <>
+              <PlaceStepper steps={inputSteps} currentIndex={stepIndex} />
               <Keypad onDigit={attemptDigit} onErase={eraseLastDigit} disabled={false} eraseDisabled={stepIndex === 0} />
               <div className="lesson-help-row">
                 <button className="hint-button" type="button" onClick={askHint} aria-label="Получить подсказку"><span aria-hidden="true">💡</span><span>Подсказка</span>{hintStage > 0 && hintStage < 2 && profile.settings.hintsMode === 'question' && <small>ещё раз — ответ</small>}</button>
-                <div className="live-step-note">Шаг {stepIndex + 1} из {inputSteps.length} · единицы первыми</div>
               </div>
               {showHintAnswer && <div className="hint-answer-card" role="status"><div><strong>Правильная цифра: {currentStep.expectedDigit}</strong><p>{currentStep.explanation}</p></div><button className="hint-insert-button" type="button" onClick={() => attemptDigit(currentStep.expectedDigit)}>Вписать цифру</button></div>}
             </>
