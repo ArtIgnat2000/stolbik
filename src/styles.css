@@ -455,9 +455,26 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .accent-options { display: flex; gap: 12px; }
 .accent-swatch { width: 48px; height: 48px; }
 .shop-footnote { margin: 13px 0 0; color: #a1a2ad; font-size: 10px; }
-.shop-illustration { max-width: 720px; margin: 0 auto 16px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--card-shadow); }
-.shop-illustration img { display: block; width: 100%; height: auto; }
-.teaser-illustration figcaption { padding: 11px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.shop-scene { position: relative; max-width: 860px; margin: 0 auto; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--card-shadow); }
+.shop-scene-image { display: block; width: 100%; height: auto; }
+.scene-badge { position: absolute; top: 12px; left: 12px; min-height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 99px; background: rgba(255, 255, 255, .92); color: #6754bd; font-size: 11px; font-weight: 900; box-shadow: 0 4px 14px rgba(56, 48, 109, .12); }
+.shop-spot { position: absolute; transform: translate(-50%, -50%); display: grid; width: 54px; height: 54px; place-items: center; padding: 0; border: 2px solid rgba(255, 255, 255, .92); border-radius: 18px; background: rgba(255, 255, 255, .9); box-shadow: 0 6px 18px rgba(56, 48, 109, .16); cursor: pointer; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+.shop-spot:hover { transform: translate(-50%, -50%) scale(1.09); }
+.spot-icon { font-size: 25px; line-height: 1; }
+.spot-price { position: absolute; bottom: -11px; left: 50%; transform: translateX(-50%); min-height: 18px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 99px; background: var(--purple); color: #fff; font-size: 9px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 10px rgba(117, 96, 223, .3); }
+.spot-owned .spot-price { background: #52a99a; box-shadow: 0 4px 10px rgba(82, 169, 154, .3); }
+.spot-equipped { border-color: #52a99a; box-shadow: 0 0 0 3px rgba(82, 169, 154, .35); }
+.spot-poor { opacity: .55; }
+.spot-selected { transform: translate(-50%, -50%) scale(1.12); border-color: var(--purple); box-shadow: 0 0 0 3px rgba(117, 96, 223, .35); }
+.spot-coming .spot-price { background: #8f84bd; }
+.spot-panel { display: flex; align-items: center; gap: 18px; min-height: 112px; padding: 14px 20px; border-top: 1px solid var(--line); background: #fff; }
+.spot-panel-copy { display: grid; flex: 1; gap: 4px; }
+.spot-panel-copy .eyebrow { margin-bottom: 1px; }
+.spot-panel-copy strong { color: #5a5d72; font-size: 15px; }
+.spot-panel-copy small { max-width: 430px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.spot-panel-actions { display: grid; gap: 6px; justify-items: center; }
+.spot-panel-actions .primary-button, .spot-panel-actions .secondary-button { min-height: 46px; border-radius: 13px; font-size: 13px; white-space: nowrap; }
+.spot-panel-note { max-width: 190px; color: #a1a2ad; font-size: 9px; line-height: 1.35; text-align: center; }
 
 /* Boot */
 .loading-screen { display: flex; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #7464bb; }
@@ -613,6 +630,15 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .accessory-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
   .accessory-card { min-height: 150px; padding: 12px 10px; }
   .shop-crystals { font-size: 11px; }
+  .scene-badge { top: 8px; left: 8px; min-height: 24px; padding: 0 9px; font-size: 9px; }
+  .shop-spot { width: 44px; height: 44px; border-radius: 14px; }
+  .spot-icon { font-size: 20px; }
+  .spot-price { bottom: -9px; min-height: 15px; padding: 0 6px; font-size: 8px; }
+  .spot-panel { flex-wrap: wrap; min-height: 0; padding: 12px 14px; gap: 12px; }
+  .spot-panel-copy strong { font-size: 13px; }
+  .spot-panel-copy small { font-size: 11px; }
+  .spot-panel-actions { justify-items: stretch; }
+  .spot-panel-note { display: none; }
   .app-footer { margin-top: 24px; font-size: 10px; }
 }
 
