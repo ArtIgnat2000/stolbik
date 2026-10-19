@@ -1,4 +1,4 @@
-import { FULL_ART_SLOTS } from '../shopArt'
+import { FULL_ART_SLOTS, NECK_ART_IDS } from '../shopArt'
 import { ItemArtImages } from './ItemArtImages'
 
 interface DressUpOwlProps {
@@ -8,6 +8,8 @@ interface DressUpOwlProps {
 }
 
 export function DressUpOwl({ accent = '#7560df', items = [], className = '' }: DressUpOwlProps) {
+  const neckItems = items.filter((id) => NECK_ART_IDS.has(id))
+  const frontItems = items.filter((id) => !NECK_ART_IDS.has(id))
   return (
     <div className={`dress-up-owl ${className}`.trim()}>
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" role="img" aria-label="Сова БУК в полный рост">
@@ -20,6 +22,9 @@ export function DressUpOwl({ accent = '#7560df', items = [], className = '' }: D
           <ellipse cx="40" cy="188" rx="15" ry="50" fill={accent} opacity=".85" transform="rotate(-12 40 188)" />
           <ellipse cx="160" cy="188" rx="15" ry="50" fill={accent} opacity=".85" transform="rotate(12 160 188)" />
           <ellipse cx="100" cy="198" rx="42" ry="56" fill="#fff3d4" />
+        </g>
+        <ItemArtImages items={neckItems} slots={FULL_ART_SLOTS} />
+        <g strokeLinejoin="round" strokeLinecap="round">
           <path d="M56 44 42 6l36 18z" fill={accent} />
           <path d="M144 44 158 6l-36 18z" fill={accent} />
           <ellipse cx="100" cy="72" rx="58" ry="54" fill={accent} />
@@ -33,7 +38,7 @@ export function DressUpOwl({ accent = '#7560df', items = [], className = '' }: D
           <path d="m100 88-10 13h20z" fill="#efa84b" />
           <path d="M82 112c5.5 4.5 11 6.5 18 6.5s12.5-2 18-6.5" fill="none" stroke="#d99646" strokeWidth="4" />
         </g>
-        <ItemArtImages items={items} slots={FULL_ART_SLOTS} />
+        <ItemArtImages items={frontItems} slots={FULL_ART_SLOTS} />
       </svg>
     </div>
   )

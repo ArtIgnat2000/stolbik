@@ -14,9 +14,10 @@ describe('Сова БУК: арты вещей на сове', () => {
     const cap = container.querySelector('image[data-item-art="cap"]')
     expect(cap).not.toBeNull()
     expect(cap?.getAttribute('href')).toContain('shop/items/cap.webp')
-    const shoes = container.querySelector('image[data-item-art="shoes-neon"]')
-    expect(shoes).not.toBeNull()
-    expect(shoes?.getAttribute('href')).toContain('shop/items/shoes-neon.webp')
+    const shoes = container.querySelectorAll('image[data-item-art="shoes-neon"]')
+    expect(shoes).toHaveLength(2)
+    expect(shoes[0].getAttribute('href')).toContain('shop/items/shoes-neon-l.webp')
+    expect(shoes[1].getAttribute('href')).toContain('shop/items/shoes-neon-r.webp')
   })
 
   it('не рисует старый SVG-слой, когда у вещи есть арт', () => {
