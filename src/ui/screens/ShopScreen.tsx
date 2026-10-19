@@ -110,7 +110,10 @@ export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: Shop
   const [activeGroup, setActiveGroup] = useState<ShopGroup | 'all'>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [zoom, setZoom] = useState(false)
+  const [sparkleKey, setSparkleKey] = useState(0)
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
+
+  const celebrate = () => setSparkleKey((key) => key + 1)
 
   const selectedItem = selectedId ? getShopItem(selectedId) : undefined
   const goods = useMemo(() => (
@@ -137,10 +140,15 @@ export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: Shop
       </section>
       <section className="shop-section" aria-labelledby="wardrobe-heading">
         <div className="section-heading"><div><p className="eyebrow">МАЛЕНЬКИЕ РАДОСТИ</p><h2 id="wardrobe-heading">Гардероб БУКа</h2></div><span className="soft-badge">Примерка бесплатна</span></div>
+        <div className="shop-sign">
+          <img src={`${import.meta.env.BASE_URL}shop/wardrobe.webp`} alt="" loading="lazy" />
+          <span className="shop-sign-label">✨ УГОЛОК БУКА · ПРИМЕРОЧНАЯ</span>
+        </div>
         <div className="fitting-layout">
           <aside className="fitting-panel panel-card">
             <div className="fitting-stage" style={{ transformOrigin: zoomOriginFor(selectedItem), transform: zoom ? 'scale(1.75)' : 'scale(1)' }}>
               <Owl size={300} accent={profile.rewards.accentColor} accessories={previewAccessories} />
+              {sparkleKey > 0 && <span className="fitting-sparkles" key={sparkleKey} aria-hidden="true">✦</span>}
             </div>
             <button className="secondary-button fitting-zoom" type="button" aria-pressed={zoom} onClick={() => setZoom(!zoom)}>{zoom ? '🔍 Обычный размер' : '🔍 Крупно'}</button>
             <div className="fitting-info" aria-live="polite">
@@ -162,8 +170,8 @@ export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: Shop
                 {owned.includes(selectedItem.id)
                   ? (equipped.includes(selectedItem.id)
                       ? <button className="secondary-button" type="button" onClick={() => onToggle(selectedItem.id)}>Снять</button>
-                      : <button className="primary-button" type="button" onClick={() => onToggle(selectedItem.id)}>Надеть</button>)
-                  : <button className="primary-button" type="button" disabled={crystals < selectedItem.price} onClick={() => onBuy(selectedItem.id)}>Купить · {selectedItem.price} 💎</button>}
+                      : <button className="primary-button" type="button" onClick={() => { onToggle(selectedItem.id); celebrate() }}>Надеть</button>)
+                  : <button className="primary-button" type="button" disabled={crystals < selectedItem.price} onClick={() => { onBuy(selectedItem.id); celebrate() }}>Купить · {selectedItem.price} 💎</button>}
                 <small className="fitting-note">{owned.includes(selectedItem.id) ? 'Вещь уже твоя — надевай и носи' : crystals < selectedItem.price ? 'Пока не хватает кристаллов — загляни в уроки' : 'Примерка ни к чему не обязывает'}</small>
               </div>
             )}
