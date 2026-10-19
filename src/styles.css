@@ -483,8 +483,11 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .fitting-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .85fr); gap: 20px; align-items: start; }
 .fitting-main { grid-column: 1; grid-row: 1; min-width: 0; }
 .fitting-panel { grid-column: 2; grid-row: 1; position: sticky; top: 16px; display: grid; gap: 12px; justify-items: center; padding: 16px; }
-.fitting-stage { width: 100%; height: 330px; display: grid; place-items: center; overflow: hidden; border-radius: 18px; background: linear-gradient(160deg, #e8f6f0, #f4fbf7 65%, #f9fcfa); transition: transform .25s ease; }
-.fitting-stage .owl-illustration { width: 300px !important; height: 300px !important; }
+.fitting-stage { width: 100%; height: 380px; display: grid; place-items: center; overflow: hidden; border-radius: 18px; background: linear-gradient(160deg, #e8f6f0, #f4fbf7 65%, #f9fcfa); transition: height .25s ease; }
+.dress-up-owl { width: 236px; height: 354px; transition: width .25s ease, height .25s ease; }
+.dress-up-owl svg { display: block; width: 100%; height: 100%; }
+.fitting-stage-zoom { height: 520px; }
+.fitting-stage-zoom .dress-up-owl { width: 316px; height: 474px; }
 .fitting-zoom { min-height: 40px; border-radius: 12px; font-size: 12px; }
 .fitting-info { display: grid; width: 100%; gap: 4px; justify-items: center; text-align: center; }
 .fitting-info strong { color: #5a5d72; font-size: 16px; }
@@ -689,8 +692,10 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .spot-panel-copy small { font-size: 11px; }
   .spot-panel-actions { justify-items: stretch; }
   .spot-panel-note { display: none; }
-  .fitting-stage { height: 270px; }
-  .fitting-stage .owl-illustration { width: 230px !important; height: 230px !important; }
+  .fitting-stage { height: 320px; }
+  .dress-up-owl { width: 190px; height: 285px; }
+  .fitting-stage-zoom { height: 430px; }
+  .fitting-stage-zoom .dress-up-owl { width: 254px; height: 381px; }
   .fitting-panel { padding: 12px; }
   .fitting-info strong { font-size: 14px; }
   .shop-sign { height: 64px; margin-bottom: 12px; }

@@ -1,4 +1,6 @@
 import type { CSSProperties } from 'react'
+import { BLOB_ART_SLOTS, ITEM_ART_IDS } from '../shopArt'
+import { ItemArtImages } from './ItemArtImages'
 
 interface ShoeStyle {
   shape: 'sneaker' | 'boot' | 'sandal' | 'fin'
@@ -66,6 +68,7 @@ export function Owl({ size = 96, accent = '#7560df', accessories = [], className
   const shoeId = accessories.find((id) => id in SHOE_STYLES)
   return (
     <svg
+      xmlns="http://www.w3.org/2000/svg"
       className={`owl-illustration ${className}`}
       style={style}
       viewBox="0 0 128 128"
@@ -84,12 +87,13 @@ export function Owl({ size = 96, accent = '#7560df', accessories = [], className
       <path d="m64 76-10 13h20L64 76Z" fill="#efa84b" />
       <path d="M45 98c6 5 12 7 19 7s13-2 19-7" fill="none" stroke="#d99646" strokeWidth="4" strokeLinecap="round" />
       <path d="M31 101c-9 1-13 5-14 11 8 1 15-1 20-7m60-4c9 1 13 5 14 11-8 1-15-1-20-7" fill="#fff3d4" />
-      {accessories.includes('cap') && <path d="M34 37c7-12 19-19 31-19s25 7 31 19v7H34v-7Zm53 8c14 1 22 5 22 10H85v-8Z" fill="#f1a04f" stroke="#d9883f" strokeWidth="2" strokeLinejoin="round" />}
-      {accessories.includes('bow') && <path d="m92 47-13-9 2 16 11-7Zm2 0 13-9-2 16-11-7Z" fill="#dc7093" stroke="#bd4d78" strokeWidth="2" strokeLinejoin="round" />}
-      {accessories.includes('glasses') && <g fill="none" stroke="#52617c" strokeWidth="3"><circle cx="47" cy="68" r="17"/><circle cx="81" cy="68" r="17"/><path d="M64 67h-1m-33 0h-6m92 0h-6"/></g>}
-      {accessories.includes('scarf') && <path d="M31 103c17 12 49 12 66 0l-4 10c-19 13-40 13-58 0l-4-10Zm42 8 12 2-6 14-11-3 5-13Z" fill="#5bb9aa" stroke="#42988e" strokeWidth="2" strokeLinejoin="round" />}
-      {accessories.includes('medal') && <g><path d="m56 103 8 7 8-7v15H56Z" fill="#e57877"/><circle cx="64" cy="119" r="9" fill="#f4c55e" stroke="#dca93e" strokeWidth="2"/><path d="m64 113 2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4Z" fill="#fff3d4"/></g>}
-      {shoeId && <ShoeLayer shoeId={shoeId} />}
+      {accessories.includes('cap') && !ITEM_ART_IDS.has('cap') && <path d="M34 37c7-12 19-19 31-19s25 7 31 19v7H34v-7Zm53 8c14 1 22 5 22 10H85v-8Z" fill="#f1a04f" stroke="#d9883f" strokeWidth="2" strokeLinejoin="round" />}
+      {accessories.includes('bow') && !ITEM_ART_IDS.has('bow') && <path d="m92 47-13-9 2 16 11-7Zm2 0 13-9-2 16-11-7Z" fill="#dc7093" stroke="#bd4d78" strokeWidth="2" strokeLinejoin="round" />}
+      {accessories.includes('glasses') && !ITEM_ART_IDS.has('glasses') && <g fill="none" stroke="#52617c" strokeWidth="3"><circle cx="47" cy="68" r="17"/><circle cx="81" cy="68" r="17"/><path d="M64 67h-1m-33 0h-6m92 0h-6"/></g>}
+      {accessories.includes('scarf') && !ITEM_ART_IDS.has('scarf') && <path d="M31 103c17 12 49 12 66 0l-4 10c-19 13-40 13-58 0l-4-10Zm42 8 12 2-6 14-11-3 5-13Z" fill="#5bb9aa" stroke="#42988e" strokeWidth="2" strokeLinejoin="round" />}
+      {accessories.includes('medal') && !ITEM_ART_IDS.has('medal') && <g><path d="m56 103 8 7 8-7v15H56Z" fill="#e57877"/><circle cx="64" cy="119" r="9" fill="#f4c55e" stroke="#dca93e" strokeWidth="2"/><path d="m64 113 2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4Z" fill="#fff3d4"/></g>}
+      {shoeId && !ITEM_ART_IDS.has(shoeId) && <ShoeLayer shoeId={shoeId} />}
+      <ItemArtImages items={accessories} slots={BLOB_ART_SLOTS} />
     </svg>
   )
 }

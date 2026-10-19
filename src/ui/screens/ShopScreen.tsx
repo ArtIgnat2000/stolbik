@@ -1,6 +1,8 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { SHOP_CATALOG, getItemGroup, getShopItem, isExclusiveSlot, type ChildProfile, type ItemRarity, type ShopGroup, type ShopItem } from '../../state/profile'
 import { Owl } from '../components/Owl'
+import { DressUpOwl } from '../components/DressUpOwl'
+import { ITEM_ART_IDS, artHref } from '../shopArt'
 
 const ACCENTS = ['#7560df', '#52a99a', '#f0a44f', '#df7196', '#548bcc', '#7a8c55'] as const
 
@@ -30,11 +32,6 @@ const SHOP_TABS: readonly ShopTab[] = [
   { id: 'feet', label: 'Обувь', icon: '👟', color: '#548bcc' }
 ]
 
-const ART_IDS = new Set<string>([
-  'cap', 'bow', 'glasses', 'scarf', 'medal',
-  'shoes-first-step', 'shoes-cozy', 'shoes-breeze', 'shoes-autumn', 'shoes-snowflake'
-])
-
 interface CollectionSpot {
   id: string
   icon: string
@@ -50,14 +47,6 @@ const COLLECTION_SPOTS: readonly CollectionSpot[] = [
   { id: 'gadgets', icon: '📱', title: 'Полка гаджетов', blurb: 'Калькулятор «Умножайка», часы «Тик-так» и телефон «Алло».', x: 80, y: 36 },
   { id: 'piggy', icon: '🎯', title: 'Копилка мечты', blurb: 'Отложи кристаллы на заветную вещь — и следи, как растёт цель.', x: 68, y: 76 }
 ]
-
-function zoomOriginFor(item: ShopItem | undefined): string {
-  if (!item) return '50% 50%'
-  if (item.wearable === 'feet') return '50% 85%'
-  if (item.wearable === 'face') return '50% 25%'
-  if (item.wearable === 'head') return '50% 12%'
-  return '50% 55%'
-}
 
 interface ShopScreenProps {
   profile: ChildProfile
@@ -93,7 +82,7 @@ function GoodsCard({ item, owned, equipped, affordable, selected, onSelect }: Go
       onClick={() => onSelect(item.id)}
     >
       <span className="goods-art" aria-hidden="true">
-        {ART_IDS.has(item.id) && <img src={`${import.meta.env.BASE_URL}shop/items/${item.id}.webp`} alt="" loading="lazy" />}
+        {ITEM_ART_IDS.has(item.id) && <img src={artHref(item.id)} alt="" loading="lazy" />}
         <span className="goods-art-fallback">{item.icon}</span>
       </span>
       <strong className="goods-name">{item.name}</strong>
@@ -146,11 +135,11 @@ export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: Shop
         </div>
         <div className="fitting-layout">
           <aside className="fitting-panel panel-card">
-            <div className="fitting-stage" style={{ transformOrigin: zoomOriginFor(selectedItem), transform: zoom ? 'scale(1.75)' : 'scale(1)' }}>
-              <Owl size={300} accent={profile.rewards.accentColor} accessories={previewAccessories} />
+            <div className={`fitting-stage${zoom ? ' fitting-stage-zoom' : ''}`}>
+              <DressUpOwl accent={profile.rewards.accentColor} items={previewAccessories} />
               {sparkleKey > 0 && <span className="fitting-sparkles" key={sparkleKey} aria-hidden="true">✦</span>}
             </div>
-            <button className="secondary-button fitting-zoom" type="button" aria-pressed={zoom} onClick={() => setZoom(!zoom)}>{zoom ? '🔍 Обычный размер' : '🔍 Крупно'}</button>
+            <button className="secondary-button fitting-zoom" type="button" aria-pressed={zoom} onClick={() => setZoom(!zoom)}>{zoom ? '✕ Обычный размер' : '🔍 Крупно'}</button>
             <div className="fitting-info" aria-live="polite">
               {selectedItem ? (
                 <>

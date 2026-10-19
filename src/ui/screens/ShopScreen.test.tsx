@@ -43,14 +43,26 @@ describe('магазин-примерочная', () => {
     expect(within(panel as HTMLElement).getByRole('button', { name: /Купить · 8/ })).toBeDisabled()
   })
 
-  it('переключает крупный план примерки', async () => {
+  it('переключает крупный план примерки без кадрирования', async () => {
     const user = userEvent.setup()
     const { container } = renderShop()
     const zoomButton = screen.getByRole('button', { name: /Крупно/ })
     expect(zoomButton).toHaveAttribute('aria-pressed', 'false')
+    const stage = container.querySelector('.fitting-stage')!
+    expect(stage).not.toHaveClass('fitting-stage-zoom')
     await user.click(zoomButton)
     expect(screen.getByRole('button', { name: /Обычный размер/ })).toHaveAttribute('aria-pressed', 'true')
-    expect(container.querySelector('.fitting-stage')).toHaveStyle({ transform: 'scale(1.75)' })
+    expect(stage).toHaveClass('fitting-stage-zoom')
+    expect(stage.querySelector('.dress-up-owl')).not.toBeNull()
+  })
+
+  it('надевает арт выбранного товара на сову в полный рост', async () => {
+    const user = userEvent.setup()
+    const { container } = renderShop()
+    await user.click(screen.getByRole('button', { name: /^Кепка\./ }))
+    const art = container.querySelector('.fitting-stage .dress-up-owl image[data-item-art="cap"]')
+    expect(art).not.toBeNull()
+    expect(art?.getAttribute('href')).toContain('shop/items/cap.webp')
   })
 
   it('раскрывает тизер коллекции по точке «скоро»', async () => {

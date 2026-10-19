@@ -2,23 +2,32 @@ import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { Owl } from './Owl'
 
-describe('Сова БУК с обувью', () => {
-  it('не рисует обувь, пока пара не надета', () => {
-    const { container } = render(<Owl accessories={['cap', 'glasses']} />)
+describe('Сова БУК: арты вещей на сове', () => {
+  it('не рисует вещи, пока ничего не надето', () => {
+    const { container } = render(<Owl accessories={[]} />)
+    expect(container.querySelector('image[data-item-art]')).toBeNull()
     expect(container.querySelector('[data-shoes]')).toBeNull()
   })
 
-  it('рисует слой обуви для надетой пары', () => {
+  it('помещает арт товара на сову тем же файлом, что на карточке', () => {
     const { container } = render(<Owl accessories={['cap', 'shoes-neon']} />)
-    const shoes = container.querySelector('[data-shoes]')
+    const cap = container.querySelector('image[data-item-art="cap"]')
+    expect(cap).not.toBeNull()
+    expect(cap?.getAttribute('href')).toContain('shop/items/cap.webp')
+    const shoes = container.querySelector('image[data-item-art="shoes-neon"]')
     expect(shoes).not.toBeNull()
-    expect(shoes?.getAttribute('data-shoes')).toBe('shoes-neon')
-    const feet = Array.from(shoes?.children ?? []).filter((node) => node.tagName === 'g')
-    expect(feet).toHaveLength(2)
+    expect(shoes?.getAttribute('href')).toContain('shop/items/shoes-neon.webp')
   })
 
-  it('не падает на неизвестном id обуви', () => {
+  it('не рисует старый SVG-слой, когда у вещи есть арт', () => {
+    const { container } = render(<Owl accessories={['shoes-neon']} />)
+    expect(container.querySelector('[data-shoes]')).toBeNull()
+    expect(container.querySelector('image[data-item-art="shoes-neon"]')).not.toBeNull()
+  })
+
+  it('не падает на неизвестном id', () => {
     const { container } = render(<Owl accessories={['shoes-unknown']} />)
     expect(container.querySelector('[data-shoes]')).toBeNull()
+    expect(container.querySelector('image[data-item-art]')).toBeNull()
   })
 })
