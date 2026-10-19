@@ -30,7 +30,10 @@ const SHOP_TABS: readonly ShopTab[] = [
   { id: 'feet', label: 'Обувь', icon: '👟', color: '#548bcc' }
 ]
 
-const ART_IDS = new Set<string>([])
+const ART_IDS = new Set<string>([
+  'cap', 'bow', 'glasses', 'scarf', 'medal',
+  'shoes-first-step', 'shoes-cozy', 'shoes-breeze', 'shoes-autumn', 'shoes-snowflake'
+])
 
 interface CollectionSpot {
   id: string
