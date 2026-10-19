@@ -65,6 +65,8 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .profile-pill { display: inline-flex; height: 48px; align-items: center; gap: 9px; padding: 4px 11px 4px 5px; border: 1px solid #eceaf3; border-radius: 99px; background: #fff; font-size: 13px; font-weight: 800; cursor: pointer; }
 .tiny-avatar { width: 36px; height: 36px; display: grid; place-items: center; overflow: hidden; border-radius: 50%; }
 .parent-icon { width: 44px; height: 44px; font-size: 19px; }
+.shop-icon { width: 44px; height: 44px; font-size: 19px; border-color: #d7eee7; background: #edfaf5; }
+.shop-icon:hover { background: #daf0e8; }
 .storage-warning { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin: 0 0 16px; padding: 13px 15px; border: 1px solid #f0d8ae; border-radius: 14px; background: #fff7e8; color: #74572c; font-size: 13px; line-height: 1.45; }
 .storage-warning-close { width: 48px; height: 48px; flex: 0 0 auto; margin: -7px -8px -7px 0; border: 0; border-radius: 12px; background: transparent; color: inherit; font-size: 22px; cursor: pointer; }
 
@@ -482,6 +484,7 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .profile-pill > span:nth-child(2) { max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tiny-avatar { width: 34px; height: 34px; }
   .parent-icon { width: 39px; height: 39px; }
+  .shop-icon { width: 39px; height: 39px; }
   .hero-card { min-height: 265px; padding: 25px 20px 23px; border-radius: 23px; }
   .hero-copy { width: 75%; }
   .hero-card h1 { max-width: 280px; font-size: clamp(28px, 7.5vw, 36px); }

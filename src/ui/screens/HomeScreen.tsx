@@ -96,6 +96,7 @@ export function HomeScreen({
         </button>
         <div className="header-actions">
           <button className="crystal-pill" type="button" onClick={onOpenShop} aria-label={`Кристаллов: ${profile.rewards.crystals}. Открыть магазин`}><span aria-hidden="true">💎</span> {profile.rewards.crystals}</button>
+          <button className="icon-button shop-icon" type="button" onClick={onOpenShop} aria-label="Уголок БУКа — открыть магазин">🎨</button>
           <button className="profile-pill" type="button" onClick={onOpenProfiles} aria-label={`Профиль ${profile.name}, сменить профиль`}>
             <span className="tiny-avatar" style={{ backgroundColor: profile.color }}><Owl size={32} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /></span>
             <span>{profile.name}</span><span aria-hidden="true">⌄</span>
@@ -189,7 +190,7 @@ export function HomeScreen({
           </section>
 
           <button className="shop-banner" type="button" onClick={onOpenShop}>
-            <span className="shop-banner-icon" aria-hidden="true">🎨</span><span><strong>Уголок БУКа</strong><small>Костюмы, очки и другие радости</small></span><span aria-hidden="true">→</span>
+            <span className="shop-banner-icon" aria-hidden="true">🎨</span><span><strong>Уголок БУКа</strong><small>Костюмы, очки, обувь и другие радости</small></span><span aria-hidden="true">→</span>
           </button>
           <section className="gentle-note"><span aria-hidden="true">💜</span><p>Можно заниматься каждый день или когда захочется. <strong>Пропуски ничего не отнимают.</strong></p></section>
         </aside>
