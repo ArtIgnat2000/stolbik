@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { loadLocalData, requestPersistentStorage, saveProfile, setActiveProfileId } from '../platform/database'
-import { ACCESSORY_CATALOG, createProfile, getDailyProgress, getHighestUnlockedLevel, type ChildProfile, type DailyProgress, type HintMode, type LevelProgress, type ProfileSettings } from './profile'
+import { createProfile, getDailyProgress, getHighestUnlockedLevel, getShopItem, isExclusiveSlot, type ChildProfile, type DailyProgress, type HintMode, type LevelProgress, type ProfileSettings } from './profile'
 import type { LevelId } from '../content/levels'
 
 const EMPTY_PROFILES: ChildProfile[] = []
@@ -23,8 +23,8 @@ export interface AppState {
   finishLesson: (profileId: string, levelId: LevelId, cleanSolved: number, lessonSize: number, durationMs: number) => void
   claimDailyTask: (profileId: string, taskId: 'examples' | 'streak' | 'level') => void
   claimDailyChest: (profileId: string) => void
-  buyAccessory: (profileId: string, accessoryId: string) => boolean
-  toggleAccessory: (profileId: string, accessoryId: string) => void
+  buyItem: (profileId: string, itemId: string) => boolean
+  toggleWearable: (profileId: string, itemId: string) => void
   recolorMascot: (profileId: string, color: string) => boolean
   resetProgress: (profileId: string) => void
   restoreProfile: (profileId: string, imported: ChildProfile) => void
@@ -61,6 +61,16 @@ function addActivityDay(profile: ChildProfile, date: string): string[] {
 
 function emptyLevelProgress(): LevelProgress {
   return { crowns: 0, solved: 0, cleanSolved: 0, errors: 0 }
+}
+
+function equipWearable(profile: ChildProfile, itemId: string): ChildProfile {
+  const item = getShopItem(itemId)
+  if (!item) return profile
+  let equipped = profile.rewards.accessoriesEquipped.filter((id) => id !== itemId)
+  if (isExclusiveSlot(item.wearable)) {
+    equipped = equipped.filter((id) => getShopItem(id)?.wearable !== item.wearable)
+  }
+  return { ...profile, rewards: { ...profile.rewards, accessoriesEquipped: [...equipped, itemId] } }
 }
 
 function replaceLevelProgress(profile: ChildProfile, levelId: LevelId, transform: (previous: LevelProgress) => LevelProgress): ChildProfile {
@@ -288,37 +298,36 @@ export const useAppStore = create<AppState>((set, get) => ({
     })
   },
 
-  buyAccessory: (profileId, accessoryId) => {
-    const accessory = ACCESSORY_CATALOG.find((item) => item.id === accessoryId)
-    if (!accessory) return false
+  buyItem: (profileId, itemId) => {
+    const item = getShopItem(itemId)
+    if (!item) return false
     let bought = false
     updateProfileInStore(profileId, get, set, (profile) => {
-      if (profile.rewards.accessoriesOwned.includes(accessoryId) || profile.rewards.crystals < accessory.price) return profile
+      if (profile.rewards.accessoriesOwned.includes(itemId) || profile.rewards.crystals < item.price) return profile
       bought = true
-      return {
+      const withOwned = {
         ...profile,
         rewards: {
           ...profile.rewards,
-          crystals: profile.rewards.crystals - accessory.price,
-          accessoriesOwned: [...profile.rewards.accessoriesOwned, accessoryId],
-          accessoriesEquipped: [...profile.rewards.accessoriesEquipped, accessoryId]
+          crystals: profile.rewards.crystals - item.price,
+          accessoriesOwned: [...profile.rewards.accessoriesOwned, itemId]
         }
       }
+      return equipWearable(withOwned, itemId)
     })
     return bought
   },
 
-  toggleAccessory: (profileId, accessoryId) => {
+  toggleWearable: (profileId, itemId) => {
     updateProfileInStore(profileId, get, set, (profile) => {
-      if (!profile.rewards.accessoriesOwned.includes(accessoryId)) return profile
-      const isEquipped = profile.rewards.accessoriesEquipped.includes(accessoryId)
+      if (!profile.rewards.accessoriesOwned.includes(itemId)) return profile
+      const isEquipped = profile.rewards.accessoriesEquipped.includes(itemId)
+      if (!isEquipped) return equipWearable(profile, itemId)
       return {
         ...profile,
         rewards: {
           ...profile.rewards,
-          accessoriesEquipped: isEquipped
-            ? profile.rewards.accessoriesEquipped.filter((id) => id !== accessoryId)
-            : [...profile.rewards.accessoriesEquipped, accessoryId]
+          accessoriesEquipped: profile.rewards.accessoriesEquipped.filter((id) => id !== itemId)
         }
       }
     })

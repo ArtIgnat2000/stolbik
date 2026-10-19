@@ -2,13 +2,47 @@ import type { LevelId } from '../content/levels'
 
 export type HintMode = 'question' | 'answer' | 'off'
 
-export const ACCESSORY_CATALOG = Object.freeze([
-  { id: 'cap', name: 'Кепка', icon: '🧢', price: 8 },
-  { id: 'bow', name: 'Бантик', icon: '🎀', price: 8 },
-  { id: 'glasses', name: 'Очки', icon: '🤓', price: 10 },
-  { id: 'scarf', name: 'Шарфик', icon: '🧣', price: 10 },
-  { id: 'medal', name: 'Медаль', icon: '🏅', price: 12 }
-] as const)
+export type ShopCategory = 'accessories' | 'shoes'
+
+export type WearableSlot = 'head' | 'face' | 'neck' | 'chest' | 'feet'
+
+export type ItemRarity = 'common' | 'rare' | 'legendary'
+
+export interface ShopItem {
+  id: string
+  category: ShopCategory
+  name: string
+  flavor: string
+  icon: string
+  price: number
+  rarity: ItemRarity
+  wearable: WearableSlot
+}
+
+const EXCLUSIVE_WEARABLE_SLOTS: readonly WearableSlot[] = ['feet']
+
+export function isExclusiveSlot(slot: WearableSlot): boolean {
+  return EXCLUSIVE_WEARABLE_SLOTS.includes(slot)
+}
+
+export const SHOP_CATALOG: readonly ShopItem[] = Object.freeze([
+  { id: 'cap', category: 'accessories', name: 'Кепка', flavor: 'Козырёк от солнечных примеров', icon: '🧢', price: 8, rarity: 'common', wearable: 'head' },
+  { id: 'bow', category: 'accessories', name: 'Бантик', flavor: 'На каждый особый ответ', icon: '🎀', price: 8, rarity: 'common', wearable: 'head' },
+  { id: 'glasses', category: 'accessories', name: 'Очки', flavor: 'Чтобы разглядеть каждый разряд', icon: '🤓', price: 10, rarity: 'common', wearable: 'face' },
+  { id: 'scarf', category: 'accessories', name: 'Шарфик', flavor: 'Тёплый приём для верных ответов', icon: '🧣', price: 10, rarity: 'common', wearable: 'neck' },
+  { id: 'medal', category: 'accessories', name: 'Медаль', flavor: 'За старания, а не за спешку', icon: '🏅', price: 12, rarity: 'rare', wearable: 'chest' },
+  { id: 'shoes-first-step', category: 'shoes', name: 'Кеды «Первый шаг»', flavor: 'С ними точно не промахнёшься мимо ответа', icon: '👟', price: 10, rarity: 'common', wearable: 'feet' },
+  { id: 'shoes-cozy', category: 'shoes', name: 'Тапочки «Уютные»', flavor: 'Для занятий, не вставая с кресла', icon: '🩴', price: 12, rarity: 'common', wearable: 'feet' },
+  { id: 'shoes-breeze', category: 'shoes', name: 'Кроссовки «Ветерок»', flavor: 'Мчатся к новым примерам', icon: '👟', price: 16, rarity: 'common', wearable: 'feet' },
+  { id: 'shoes-autumn', category: 'shoes', name: 'Ботинки «Осенний день»', flavor: 'И по лужам, и по разрядам', icon: '🥾', price: 20, rarity: 'common', wearable: 'feet' },
+  { id: 'shoes-snowflake', category: 'shoes', name: 'Сапожки «Снежинка»', flavor: 'Тёплые даже в минус на доске', icon: '👢', price: 24, rarity: 'rare', wearable: 'feet' },
+  { id: 'shoes-fins', category: 'shoes', name: 'Ласты «Морская прогулка»', flavor: 'Заплыв до самой пристани', icon: '🤿', price: 26, rarity: 'rare', wearable: 'feet' },
+  { id: 'shoes-neon', category: 'shoes', name: 'Кроссовки «Неон»', flavor: 'Светятся в темноте и в уроках', icon: '👟', price: 30, rarity: 'legendary', wearable: 'feet' }
+])
+
+export function getShopItem(id: string): ShopItem | undefined {
+  return SHOP_CATALOG.find((item) => item.id === id)
+}
 
 export interface ProfileSettings {
   lessonSize: 3 | 5 | 8

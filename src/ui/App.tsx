@@ -33,8 +33,8 @@ export function App() {
   const finishLesson = useAppStore((state) => state.finishLesson)
   const claimDailyTask = useAppStore((state) => state.claimDailyTask)
   const claimDailyChest = useAppStore((state) => state.claimDailyChest)
-  const buyAccessory = useAppStore((state) => state.buyAccessory)
-  const toggleAccessory = useAppStore((state) => state.toggleAccessory)
+  const buyItem = useAppStore((state) => state.buyItem)
+  const toggleWearable = useAppStore((state) => state.toggleWearable)
   const recolorMascot = useAppStore((state) => state.recolorMascot)
   const resetProgress = useAppStore((state) => state.resetProgress)
   const restoreProfile = useAppStore((state) => state.restoreProfile)
@@ -91,7 +91,7 @@ export function App() {
   }
 
   if (screen === 'shop') {
-    return <Suspense fallback={<LoadingScreen />}><ShopScreen profile={activeProfile} onBack={() => setScreen('home')} onBuy={(id) => { buyAccessory(activeProfile.id, id) }} onToggle={(id) => toggleAccessory(activeProfile.id, id)} onRecolor={(color) => { recolorMascot(activeProfile.id, color) }} /></Suspense>
+    return <Suspense fallback={<LoadingScreen />}><ShopScreen profile={activeProfile} onBack={() => setScreen('home')} onBuy={(id) => { buyItem(activeProfile.id, id) }} onToggle={(id) => toggleWearable(activeProfile.id, id)} onRecolor={(color) => { recolorMascot(activeProfile.id, color) }} /></Suspense>
   }
 
   return <Suspense fallback={<LoadingScreen />}><HomeScreen

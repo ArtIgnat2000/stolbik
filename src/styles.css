@@ -441,6 +441,11 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .accessory-action { min-height: 40px; width: 100%; padding: 0 9px; border-radius: 12px; font-size: 11px; }
 .accessory-action.primary-button { box-shadow: none; }
 .accessory-equipped { border-color: #b9ded0; background: #fbfffd; }
+.item-flavor { max-width: 210px; min-height: 26px; color: #9a9db0; font-size: 10px; line-height: 1.35; }
+.item-rarity { display: inline-flex; min-height: 20px; align-items: center; padding: 0 9px; border-radius: 99px; font-size: 9px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+.rarity-common { background: #eef4f1; color: #74a997; }
+.rarity-rare { background: #f0edff; color: #7467b5; }
+.rarity-legendary { background: #fdf3dc; color: #c9962e; }
 .accent-section { padding: 20px 23px; border: 1px solid #e8e6ef; border-radius: 20px; background: #fff; }
 .accent-section .section-heading { margin-bottom: 15px; }
 .accent-section h2 { margin-bottom: 5px; }
