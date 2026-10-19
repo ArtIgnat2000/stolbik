@@ -455,6 +455,9 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .accent-options { display: flex; gap: 12px; }
 .accent-swatch { width: 48px; height: 48px; }
 .shop-footnote { margin: 13px 0 0; color: #a1a2ad; font-size: 10px; }
+.shop-illustration { max-width: 720px; margin: 0 auto 16px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--card-shadow); }
+.shop-illustration img { display: block; width: 100%; height: auto; }
+.teaser-illustration figcaption { padding: 11px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
 
 /* Boot */
 .loading-screen { display: flex; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #7464bb; }

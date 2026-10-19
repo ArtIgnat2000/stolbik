@@ -60,6 +60,9 @@ export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: Shop
       </section>
       <section className="shop-section" aria-labelledby="shoes-heading">
         <div className="section-heading"><div><p className="eyebrow">НОВОЕ: ГАРДЕРОБ</p><h2 id="shoes-heading">Обувь</h2></div><span className="soft-badge">Одна пара за раз</span></div>
+        <figure className="shop-illustration">
+          <img src={`${import.meta.env.BASE_URL}shop/wardrobe.webp`} alt="Сова БУК примеряет обувь в гардеробе: кеды, ботинки, сандалии и ласты" loading="lazy" />
+        </figure>
         <div className="accessory-grid">
           {shoes.map((item) => <WearableCard key={item.id} item={item} owned={owned.includes(item.id)} equipped={equipped.includes(item.id)} crystals={profile.rewards.crystals} onBuy={onBuy} onToggle={onToggle} />)}
         </div>
@@ -69,6 +72,13 @@ export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: Shop
         <div className="section-heading"><div><p className="eyebrow">ЦВЕТ ДНЯ</p><h2 id="accent-heading">Перекрасить БУКа</h2><p>Новый цвет стоит всего 1 💎</p></div></div>
         <div className="accent-options" role="group" aria-label="Выбор цвета БУКа">{ACCENTS.map((color) => <button type="button" key={color} className={`accent-swatch${profile.rewards.accentColor === color ? ' accent-swatch-selected' : ''}`} style={{ backgroundColor: color }} aria-label={`Перекрасить сову в цвет ${color}. Стоимость 1 кристалл`} aria-pressed={profile.rewards.accentColor === color} onClick={() => onRecolor(color)} />)}</div>
         <p className="shop-footnote">Выбор того же цвета бесплатный. Покупки только за игровые кристаллы.</p>
+      </section>
+      <section className="shop-section teaser-section" aria-labelledby="collection-heading">
+        <div className="section-heading"><div><p className="eyebrow">СКОРО В УГЛОКЕ БУКА</p><h2 id="collection-heading">Коллекция БУКа</h2></div><span className="soft-badge">Уже в планах</span></div>
+        <figure className="shop-illustration teaser-illustration">
+          <img src={`${import.meta.env.BASE_URL}shop/collection.webp`} alt="Коллекция БУКа: гараж с машиной, пристань с яхтой и полка гаджетов" loading="lazy" />
+          <figcaption>Машины, яхты и гаджеты — ради них стоит копить кристаллы.</figcaption>
+        </figure>
       </section>
     </main>
   )
