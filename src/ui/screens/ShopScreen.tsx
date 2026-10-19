@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { getShopItem, isExclusiveSlot, type ChildProfile, type ItemRarity, type ShopItem } from '../../state/profile'
+import { useMemo, useState, type CSSProperties } from 'react'
+import { SHOP_CATALOG, getItemGroup, getShopItem, isExclusiveSlot, type ChildProfile, type ItemRarity, type ShopGroup, type ShopItem } from '../../state/profile'
 import { Owl } from '../components/Owl'
 
 const ACCENTS = ['#7560df', '#52a99a', '#f0a44f', '#df7196', '#548bcc', '#7a8c55'] as const
@@ -15,26 +15,22 @@ const CATEGORY_LABELS: Record<ShopItem['category'], string> = {
   shoes: 'Обувь'
 }
 
-interface SceneSpot {
-  itemId: string
-  x: number
-  y: number
+interface ShopTab {
+  id: ShopGroup | 'all'
+  label: string
+  icon: string
+  color: string
 }
 
-const WARDROBE_SPOTS: readonly SceneSpot[] = [
-  { itemId: 'cap', x: 11, y: 22 },
-  { itemId: 'bow', x: 26, y: 22 },
-  { itemId: 'glasses', x: 41, y: 22 },
-  { itemId: 'scarf', x: 56, y: 22 },
-  { itemId: 'medal', x: 11, y: 50 },
-  { itemId: 'shoes-first-step', x: 26, y: 50 },
-  { itemId: 'shoes-cozy', x: 41, y: 50 },
-  { itemId: 'shoes-breeze', x: 56, y: 50 },
-  { itemId: 'shoes-autumn', x: 11, y: 76 },
-  { itemId: 'shoes-snowflake', x: 26, y: 76 },
-  { itemId: 'shoes-fins', x: 41, y: 76 },
-  { itemId: 'shoes-neon', x: 56, y: 76 }
+const SHOP_TABS: readonly ShopTab[] = [
+  { id: 'all', label: 'Всё', icon: '🎒', color: '#7560df' },
+  { id: 'head', label: 'Головные уборы', icon: '🎩', color: '#df7196' },
+  { id: 'face', label: 'Очки', icon: '👓', color: '#52a99a' },
+  { id: 'clothes', label: 'Одежда', icon: '🧣', color: '#f0a44f' },
+  { id: 'feet', label: 'Обувь', icon: '👟', color: '#548bcc' }
 ]
+
+const ART_IDS = new Set<string>([])
 
 interface CollectionSpot {
   id: string
@@ -52,6 +48,14 @@ const COLLECTION_SPOTS: readonly CollectionSpot[] = [
   { id: 'piggy', icon: '🎯', title: 'Копилка мечты', blurb: 'Отложи кристаллы на заветную вещь — и следи, как растёт цель.', x: 68, y: 76 }
 ]
 
+function zoomOriginFor(item: ShopItem | undefined): string {
+  if (!item) return '50% 50%'
+  if (item.wearable === 'feet') return '50% 85%'
+  if (item.wearable === 'face') return '50% 25%'
+  if (item.wearable === 'head') return '50% 12%'
+  return '50% 55%'
+}
+
 interface ShopScreenProps {
   profile: ChildProfile
   onBack: () => void
@@ -60,14 +64,55 @@ interface ShopScreenProps {
   onRecolor: (color: string) => void
 }
 
+interface GoodsCardProps {
+  item: ShopItem
+  owned: boolean
+  equipped: boolean
+  affordable: boolean
+  selected: boolean
+  onSelect: (id: string) => void
+}
+
+function GoodsCard({ item, owned, equipped, affordable, selected, onSelect }: GoodsCardProps) {
+  const stateBadge = equipped
+    ? <span className="goods-state state-equipped">✦ Надето</span>
+    : owned
+      ? <span className="goods-state state-owned">✓ Куплено</span>
+      : affordable
+        ? <span className="goods-state">На приме</span>
+        : <span className="goods-state state-locked">🔒 Пока не хватает</span>
+  return (
+    <button
+      type="button"
+      className={`goods-card${selected ? ' goods-card-selected' : ''}${equipped ? ' goods-card-equipped' : ''}`}
+      aria-label={`${item.name}. ${owned ? (equipped ? 'Надето' : 'Куплено') : `${item.price} кристаллов`}`}
+      aria-pressed={selected}
+      onClick={() => onSelect(item.id)}
+    >
+      <span className="goods-art" aria-hidden="true">
+        {ART_IDS.has(item.id) && <img src={`${import.meta.env.BASE_URL}shop/items/${item.id}.webp`} alt="" loading="lazy" />}
+        <span className="goods-art-fallback">{item.icon}</span>
+      </span>
+      <strong className="goods-name">{item.name}</strong>
+      <small className="goods-flavor">{item.flavor}</small>
+      <span className="goods-meta"><span className="goods-price">💎 {item.price}</span>{stateBadge}</span>
+    </button>
+  )
+}
+
 export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: ShopScreenProps) {
   const owned = profile.rewards.accessoriesOwned
   const equipped = profile.rewards.accessoriesEquipped
   const crystals = profile.rewards.crystals
+  const [activeGroup, setActiveGroup] = useState<ShopGroup | 'all'>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(false)
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
 
   const selectedItem = selectedId ? getShopItem(selectedId) : undefined
+  const goods = useMemo(() => (
+    activeGroup === 'all' ? SHOP_CATALOG : SHOP_CATALOG.filter((item) => getItemGroup(item) === activeGroup)
+  ), [activeGroup])
   const previewAccessories = useMemo(() => {
     if (!selectedItem) return equipped
     const base = equipped.filter((id) => id !== selectedItem.id)
@@ -77,6 +122,9 @@ export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: Shop
     return [...withoutSameSlot, selectedItem.id]
   }, [selectedItem, equipped])
   const selectedCollection = COLLECTION_SPOTS.find((spot) => spot.id === selectedCollectionId)
+  const tabCount = (tabId: ShopGroup | 'all') => (
+    tabId === 'all' ? SHOP_CATALOG.length : SHOP_CATALOG.filter((item) => getItemGroup(item) === tabId).length
+  )
   return (
     <main className="shop-page page-shell">
       <header className="app-header shop-header"><button className="icon-button" type="button" aria-label="Назад домой" onClick={onBack}>←</button><div className="brand-lockup"><span className="brand-mark">+</span><span>УГОЛОК БУКа</span></div><span className="crystal-pill shop-crystals">💎 {crystals}</span></header>
@@ -85,53 +133,62 @@ export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: Shop
         <Owl size={150} accent={profile.rewards.accentColor} accessories={equipped} />
       </section>
       <section className="shop-section" aria-labelledby="wardrobe-heading">
-        <div className="section-heading"><div><p className="eyebrow">МАЛЕНЬКИЕ РАДОСТИ</p><h2 id="wardrobe-heading">Гардероб БУКа</h2></div><span className="soft-badge">Весь каталог — на витрине</span></div>
-        <div className="shop-scene shop-scene-wardrobe">
-          <img className="shop-scene-image" src={`${import.meta.env.BASE_URL}shop/wardrobe.webp`} alt="Интерактивная витрина гардероба БУКа" loading="lazy" />
-          <span className="scene-badge" aria-hidden="true">✨ Нажми на вещь</span>
-          {WARDROBE_SPOTS.map((spot) => {
-            const item = getShopItem(spot.itemId)
-            if (!item) return null
-            const isOwned = owned.includes(item.id)
-            const isEquipped = equipped.includes(item.id)
-            const isSelected = selectedId === item.id
-            const stateLabel = `${isOwned ? 'Куплено' : `${item.price} кристаллов`}${isEquipped ? ', надето' : ''}`
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`shop-spot${isOwned ? ' spot-owned' : ''}${isEquipped ? ' spot-equipped' : ''}${!isOwned && crystals < item.price ? ' spot-poor' : ''}${isSelected ? ' spot-selected' : ''}`}
-                style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
-                aria-label={`${item.name}. ${stateLabel}`}
-                aria-pressed={isSelected}
-                onClick={() => setSelectedId(isSelected ? null : item.id)}
-              >
-                <span className="spot-icon" aria-hidden="true">{item.icon}</span>
-                <span className="spot-price" aria-hidden="true">{isOwned ? '✓' : `💎 ${item.price}`}</span>
-              </button>
-            )
-          })}
-          <div className="spot-panel" aria-live="polite">
-            {selectedItem ? (
-              <>
-                <Owl size={88} accent={profile.rewards.accentColor} accessories={previewAccessories} />
-                <div className="spot-panel-copy">
+        <div className="section-heading"><div><p className="eyebrow">МАЛЕНЬКИЕ РАДОСТИ</p><h2 id="wardrobe-heading">Гардероб БУКа</h2></div><span className="soft-badge">Примерка бесплатна</span></div>
+        <div className="fitting-layout">
+          <aside className="fitting-panel panel-card">
+            <div className="fitting-stage" style={{ transformOrigin: zoomOriginFor(selectedItem), transform: zoom ? 'scale(1.75)' : 'scale(1)' }}>
+              <Owl size={300} accent={profile.rewards.accentColor} accessories={previewAccessories} />
+            </div>
+            <button className="secondary-button fitting-zoom" type="button" aria-pressed={zoom} onClick={() => setZoom(!zoom)}>{zoom ? '🔍 Обычный размер' : '🔍 Крупно'}</button>
+            <div className="fitting-info" aria-live="polite">
+              {selectedItem ? (
+                <>
                   <p className="eyebrow">{RARITY_LABELS[selectedItem.rarity]} · {CATEGORY_LABELS[selectedItem.category]}</p>
                   <strong>{selectedItem.name}</strong>
                   <small>{selectedItem.flavor}</small>
-                </div>
-                <div className="spot-panel-actions">
-                  {owned.includes(selectedItem.id)
-                    ? (equipped.includes(selectedItem.id)
-                        ? <button className="secondary-button" type="button" onClick={() => onToggle(selectedItem.id)}>Снять</button>
-                        : <button className="primary-button" type="button" onClick={() => onToggle(selectedItem.id)}>Надеть</button>)
-                    : <button className="primary-button" type="button" disabled={crystals < selectedItem.price} onClick={() => onBuy(selectedItem.id)}>Купить · {selectedItem.price} 💎</button>}
-                  <small className="spot-panel-note">{owned.includes(selectedItem.id) ? 'БУК уже примеряет эту вещь' : crystals < selectedItem.price ? 'Пока не хватает кристаллов — загляни в уроки' : 'БУК примеряет вещь прямо сейчас'}</small>
-                </div>
-              </>
-            ) : (
-              <div className="spot-panel-copy"><strong>Выбери вещь на витрине</strong><small>Нажми на любую карточку — БУК тут же примерит её. Купить можно за кристаллы из уроков.</small></div>
+                </>
+              ) : (
+                <>
+                  <strong>Выбери вещь на витрине</strong>
+                  <small>Тапни по любой карточке — БУК тут же примерит её. Крупный план поможет рассмотреть детали.</small>
+                </>
+              )}
+            </div>
+            {selectedItem && (
+              <div className="fitting-actions">
+                {owned.includes(selectedItem.id)
+                  ? (equipped.includes(selectedItem.id)
+                      ? <button className="secondary-button" type="button" onClick={() => onToggle(selectedItem.id)}>Снять</button>
+                      : <button className="primary-button" type="button" onClick={() => onToggle(selectedItem.id)}>Надеть</button>)
+                  : <button className="primary-button" type="button" disabled={crystals < selectedItem.price} onClick={() => onBuy(selectedItem.id)}>Купить · {selectedItem.price} 💎</button>}
+                <small className="fitting-note">{owned.includes(selectedItem.id) ? 'Вещь уже твоя — надевай и носи' : crystals < selectedItem.price ? 'Пока не хватает кристаллов — загляни в уроки' : 'Примерка ни к чему не обязывает'}</small>
+              </div>
             )}
+          </aside>
+          <div className="fitting-main">
+            <div className="shop-tabs" role="group" aria-label="Разделы магазина">
+              {SHOP_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`shop-tab${activeGroup === tab.id ? ' shop-tab-active' : ''}`}
+                  style={{ '--tab-color': tab.color } as CSSProperties}
+                  aria-pressed={activeGroup === tab.id}
+                  onClick={() => setActiveGroup(tab.id)}
+                >
+                  <span aria-hidden="true">{tab.icon}</span>
+                  <span>{tab.label}</span>
+                  <small className="shop-tab-count">{tabCount(tab.id)}</small>
+                </button>
+              ))}
+            </div>
+            <div className="goods-grid" role="list" aria-label="Товары магазина">
+              {goods.map((item) => (
+                <div role="listitem" key={item.id}>
+                  <GoodsCard item={item} owned={owned.includes(item.id)} equipped={equipped.includes(item.id)} affordable={crystals >= item.price} selected={selectedId === item.id} onSelect={(id) => setSelectedId(selectedId === id ? null : id)} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <p className="shop-footnote">Обувь надевается на лапки БУКа (одна пара за раз), аксессуары можно совмещать. Покупки только за игровые кристаллы.</p>
@@ -144,7 +201,7 @@ export function ShopScreen({ profile, onBack, onBuy, onToggle, onRecolor }: Shop
       <section className="shop-section teaser-section" aria-labelledby="collection-heading">
         <div className="section-heading"><div><p className="eyebrow">СКОРО В УГЛОКЕ БУКА</p><h2 id="collection-heading">Коллекция БУКа</h2></div><span className="soft-badge">Уже в планах</span></div>
         <div className="shop-scene shop-scene-collection">
-          <img className="shop-scene-image" src={`${import.meta.env.BASE_URL}shop/collection.webp`} alt="Интерактивный тизер коллекции БУКа: гараж, пристань и полка гаджетов" loading="lazy" />
+          <img className="shop-scene-image" src={`${import.meta.env.BASE_URL}shop/collection.webp`} alt="Тизер коллекции БУКа: гараж, пристань и полка гаджетов" loading="lazy" />
           <span className="scene-badge" aria-hidden="true">✨ Загляни в будущее</span>
           {COLLECTION_SPOTS.map((spot) => (
             <button

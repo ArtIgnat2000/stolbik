@@ -476,6 +476,43 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .spot-panel-actions .primary-button, .spot-panel-actions .secondary-button { min-height: 46px; border-radius: 13px; font-size: 13px; white-space: nowrap; }
 .spot-panel-note { max-width: 190px; color: #a1a2ad; font-size: 9px; line-height: 1.35; text-align: center; }
 
+/* Примерочная: закладки, товары, крупная примерка */
+.fitting-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .85fr); gap: 20px; align-items: start; }
+.fitting-main { grid-column: 1; grid-row: 1; min-width: 0; }
+.fitting-panel { grid-column: 2; grid-row: 1; position: sticky; top: 16px; display: grid; gap: 12px; justify-items: center; padding: 16px; }
+.fitting-stage { width: 100%; height: 330px; display: grid; place-items: center; overflow: hidden; border-radius: 18px; background: linear-gradient(160deg, #e8f6f0, #f4fbf7 65%, #f9fcfa); transition: transform .25s ease; }
+.fitting-stage .owl-illustration { width: 300px !important; height: 300px !important; }
+.fitting-zoom { min-height: 40px; border-radius: 12px; font-size: 12px; }
+.fitting-info { display: grid; width: 100%; gap: 4px; justify-items: center; text-align: center; }
+.fitting-info strong { color: #5a5d72; font-size: 16px; }
+.fitting-info small { max-width: 300px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.fitting-actions { display: grid; width: 100%; gap: 6px; justify-items: center; }
+.fitting-actions .primary-button, .fitting-actions .secondary-button { width: 100%; min-height: 46px; border-radius: 13px; font-size: 13px; }
+.fitting-note { max-width: 220px; color: #a1a2ad; font-size: 9px; line-height: 1.35; text-align: center; }
+.shop-tabs { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 14px; }
+.shop-tab { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; padding: 0 14px; border: 1.5px solid var(--line); border-radius: 99px; background: #fff; color: var(--muted); font-size: 12px; font-weight: 800; cursor: pointer; transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease; }
+.shop-tab:hover { transform: translateY(-1px); border-color: var(--tab-color); }
+.shop-tab-active { border-color: var(--tab-color); background: var(--tab-color); color: #fff; }
+.shop-tab-count { min-width: 20px; min-height: 20px; display: inline-grid; place-items: center; padding: 0 5px; border-radius: 99px; background: rgba(255, 255, 255, .85); color: var(--muted); font-size: 9px; font-weight: 900; }
+.shop-tab-active .shop-tab-count { color: var(--tab-color); }
+.goods-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.goods-grid > div { display: flex; }
+.goods-card { display: grid; width: 100%; min-height: 210px; align-content: start; justify-items: center; gap: 7px; padding: 16px 12px 13px; border: 1.5px solid rgba(230, 228, 242, .9); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--card-shadow); cursor: pointer; text-align: center; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+.goods-card:hover { transform: translateY(-2px); }
+.goods-card-selected { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(117, 96, 223, .22), var(--card-shadow); }
+.goods-card-equipped { border-color: #b9ded0; background: #fbfffd; }
+.goods-art { position: relative; display: grid; width: 86px; height: 86px; place-items: center; overflow: hidden; border-radius: 24px; background: #f5f2ff; }
+.goods-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.goods-art-fallback { font-size: 42px; line-height: 1; }
+.goods-name { color: #5a5d72; font-size: 13px; line-height: 1.25; }
+.goods-flavor { min-height: 26px; max-width: 180px; color: #9a9db0; font-size: 9.5px; line-height: 1.35; }
+.goods-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin-top: 2px; }
+.goods-price { display: inline-flex; min-height: 22px; align-items: center; padding: 0 10px; border-radius: 99px; background: var(--purple-soft); color: var(--purple-dark); font-size: 11px; font-weight: 900; }
+.goods-state { display: inline-flex; min-height: 22px; align-items: center; padding: 0 9px; border-radius: 99px; background: #f4f4f8; color: #9a9db0; font-size: 9px; font-weight: 900; }
+.state-owned { background: #eef4f1; color: #74a997; }
+.state-equipped { background: #daf0e8; color: #42988e; }
+.state-locked { background: #f6f0ef; color: #b0948e; }
+
 /* Boot */
 .loading-screen { display: flex; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #7464bb; }
 .loading-mark { display: grid; width: 55px; height: 55px; place-items: center; border-radius: 19px; background: var(--purple); color: #fff; font-size: 38px; animation: soft-pulse 1.3s infinite; }
@@ -490,6 +527,9 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .shop-banner, .gentle-note { grid-column: span 1; }
   .hero-card { min-height: 265px; }
   .hero-owl-wrap { right: 24px; width: 220px; }
+  .fitting-layout { grid-template-columns: minmax(0, 1fr); }
+  .fitting-main, .fitting-panel { grid-column: 1; grid-row: auto; }
+  .fitting-panel { position: static; }
 }
 
 @media (max-width: 650px) {
@@ -639,6 +679,17 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .spot-panel-copy small { font-size: 11px; }
   .spot-panel-actions { justify-items: stretch; }
   .spot-panel-note { display: none; }
+  .fitting-stage { height: 270px; }
+  .fitting-stage .owl-illustration { width: 230px !important; height: 230px !important; }
+  .fitting-panel { padding: 12px; }
+  .fitting-info strong { font-size: 14px; }
+  .shop-tabs { gap: 7px; }
+  .shop-tab { min-height: 40px; gap: 5px; padding: 0 10px; font-size: 11px; }
+  .goods-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .goods-card { min-height: 190px; padding: 12px 9px 11px; }
+  .goods-art { width: 72px; height: 72px; border-radius: 20px; }
+  .goods-art-fallback { font-size: 34px; }
+  .goods-name { font-size: 12px; }
   .app-footer { margin-top: 24px; font-size: 10px; }
 }
 

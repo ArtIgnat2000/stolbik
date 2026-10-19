@@ -44,6 +44,15 @@ export function getShopItem(id: string): ShopItem | undefined {
   return SHOP_CATALOG.find((item) => item.id === id)
 }
 
+export type ShopGroup = 'head' | 'face' | 'clothes' | 'feet'
+
+export function getItemGroup(item: ShopItem): ShopGroup {
+  if (item.wearable === 'head') return 'head'
+  if (item.wearable === 'face') return 'face'
+  if (item.wearable === 'feet') return 'feet'
+  return 'clothes'
+}
+
 export interface ProfileSettings {
   lessonSize: 3 | 5 | 8
   soundEnabled: boolean
