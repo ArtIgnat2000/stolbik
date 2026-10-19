@@ -456,6 +456,9 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
 .accent-swatch { width: 48px; height: 48px; }
 .shop-footnote { margin: 13px 0 0; color: #a1a2ad; font-size: 10px; }
 .shop-scene { position: relative; max-width: 860px; margin: 0 auto; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--card-shadow); }
+.shop-scene-collection { max-width: 620px; }
+.shop-scene-collection .shop-spot { width: 46px; height: 46px; border-radius: 15px; }
+.shop-scene-collection .spot-icon { font-size: 21px; }
 .shop-scene-image { display: block; width: 100%; height: auto; }
 .scene-badge { position: absolute; top: 12px; left: 12px; min-height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 99px; background: rgba(255, 255, 255, .92); color: #6754bd; font-size: 11px; font-weight: 900; box-shadow: 0 4px 14px rgba(56, 48, 109, .12); }
 .shop-spot { position: absolute; transform: translate(-50%, -50%); display: grid; width: 54px; height: 54px; place-items: center; padding: 0; border: 2px solid rgba(255, 255, 255, .92); border-radius: 18px; background: rgba(255, 255, 255, .9); box-shadow: 0 6px 18px rgba(56, 48, 109, .16); cursor: pointer; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
