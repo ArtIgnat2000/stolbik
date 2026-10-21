@@ -1,31 +1,45 @@
 import { describe, expect, it } from 'vitest'
 import { analyzeColumn } from '../../engine/column'
-import { getSelfCheckStepText, getSelfCheckStepTitle } from './lessonSelfCheck'
+import { buildLessonMicroSteps } from './lessonSelfCheck'
 
-describe('подписи для самопроверки', () => {
-  it('кратко показывает сумму и перенос при сложении', () => {
-    const { steps } = analyzeColumn(58, 27, 'add')
+describe('пошаговый разбор и самопроверка', () => {
+  it('разделяет сложение, обмен и запись переноса на короткие шаги', () => {
+    const steps = buildLessonMicroSteps(analyzeColumn(58, 27, 'add'))
 
-    expect(getSelfCheckStepTitle(steps[0]!)).toBe('Единицы')
-    expect(getSelfCheckStepText(steps[0]!, 'add')).toBe('8 + 7 = 15. Пишем 5, переносим 1.')
-    expect(getSelfCheckStepText(steps[1]!, 'add')).toBe('5 + 2 + 1 (перенос) = 8. Пишем 8.')
+    expect(steps.map(({ kind, title, text }) => ({ kind, title, text }))).toEqual([
+      { kind: 'calculate', title: 'Считаем единицы', text: '8 + 7 = 15 единиц.' },
+      { kind: 'exchange', title: 'Собираем десяток', text: '10 единиц = 1 десяток.' },
+      { kind: 'write', title: 'Записываем единицы', text: 'Запиши 5 в единицы.' },
+      { kind: 'carry', title: 'Переносим десяток', text: 'Перенос: 1 десяток → в разряд десятков.' },
+      { kind: 'calculate', title: 'Считаем десятки', text: '5 + 2 + 1 = 8 десятков.' },
+      { kind: 'write', title: 'Записываем десятки', text: 'Запиши 8 в десятки.' }
+    ])
   })
 
-  it('показывает, как ноль становится девять при размене через ноль', () => {
-    const { steps } = analyzeColumn(300, 156, 'subtract')
+  it('показывает каждый обмен отдельно при вычитании через ноль', () => {
+    const steps = buildLessonMicroSteps(analyzeColumn(300, 156, 'subtract'))
 
-    expect(getSelfCheckStepTitle(steps[0]!)).toBe('Единицы')
-    expect(getSelfCheckStepText(steps[0]!, 'subtract')).toBe(
-      'Размен: сотни 3 → 2; десятки 0 → 9. 10 − 6 = 4. Пишем 4.'
-    )
+    expect(steps.map(({ kind, title, text }) => ({ kind, title, text }))).toEqual([
+      { kind: 'exchange', title: 'Обмениваем сотню', text: '1 сотня → 10 десятков.' },
+      { kind: 'exchange', title: 'Обмениваем десяток', text: '1 десяток → 10 единиц.' },
+      { kind: 'calculate', title: 'Считаем единицы', text: '10 − 6 = 4 единицы.' },
+      { kind: 'write', title: 'Записываем единицы', text: 'Запиши 4 в единицы.' },
+      { kind: 'calculate', title: 'Считаем десятки', text: '9 − 5 = 4 десятка.' },
+      { kind: 'write', title: 'Записываем десятки', text: 'Запиши 4 в десятки.' },
+      { kind: 'calculate', title: 'Считаем сотни', text: '2 − 1 = 1 сотня.' },
+      { kind: 'write', title: 'Записываем сотни', text: 'Запиши 1 в сотни.' }
+    ])
   })
 
-  it('показывает перенос как отдельный последний шаг', () => {
-    const { steps } = analyzeColumn(90, 10, 'add')
-    const finalCarry = steps.find((step) => step.isFinalCarry)
+  it('оставляет итоговый перенос отдельным действием', () => {
+    const steps = buildLessonMicroSteps(analyzeColumn(90, 10, 'add'))
+    const finalCarry = steps.at(-1)
 
-    expect(finalCarry).toBeDefined()
-    expect(getSelfCheckStepTitle(finalCarry!)).toBe('Перенос')
-    expect(getSelfCheckStepText(finalCarry!, 'add')).toBe('Записываем 1 в разряд сотен.')
+    expect(finalCarry).toMatchObject({
+      kind: 'write',
+      title: 'Записываем сотни',
+      text: 'Запиши цифру 1 в сотни.',
+      digit: 1
+    })
   })
 })

@@ -22,18 +22,17 @@ async function solveCurrentExample(user: ReturnType<typeof userEvent.setup>): Pr
 }
 
 async function completeCurrentModel(user: ReturnType<typeof userEvent.setup>): Promise<void> {
-  const a = Number(screen.getByText(/Первое число:/).textContent?.match(/\d+/)?.[0])
-  const b = Number(screen.getByText(/Второе число:/).textContent?.match(/\d+/)?.[0])
+  const a = Number(screen.getByTestId('operand-a').textContent)
+  const b = Number(screen.getByTestId('operand-b').textContent)
   const operationText = screen.getByTestId('model-operation').textContent
   const actions = buildPlaceValueActions(a, b, operationText === '+' ? 'add' : 'subtract')
   for (const action of actions) {
-    if (action.kind === 'combine') {
-      await user.click(screen.getByRole('button', { name: new RegExp(`^${action.total}$`) }))
-    } else if (action.kind === 'regroup' || action.kind === 'exchange') {
+    if (action.kind === 'combine' || action.kind === 'remove') {
       await user.click(screen.getByTestId('model-correct-choice'))
     } else {
-      await user.click(screen.getByRole('button', { name: new RegExp(`^${action.remaining}$`) }))
+      await user.click(screen.getByTestId('model-exchange-action'))
     }
+    await user.click(screen.getByRole('button', { name: /^Дальше/ }))
   }
 }
 
@@ -49,7 +48,7 @@ describe('первый запуск и короткий урок', () => {
 
     expect(await screen.findByRole('heading', { name: 'Считаем шаг за шагом' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Начать 1:/ }))
-    await user.click(await screen.findByRole('button', { name: /Попробовать и исследовать/ }))
+    await user.click(await screen.findByRole('button', { name: /Начать урок/ }))
     const warmupDiagram = screen.getByRole('group', { name: 'Наглядная модель точки и треугольника' })
     expect(within(warmupDiagram).getByText('1 единица')).toBeInTheDocument()
     expect(within(warmupDiagram).getByText('Посчитай точки внутри')).toBeInTheDocument()
@@ -58,15 +57,22 @@ describe('первый запуск и короткий урок', () => {
     await user.click(screen.getByRole('button', { name: '10 (десять)' }))
     await completeCurrentModel(user)
     await user.click(screen.getByRole('button', { name: /Перейти к записи в столбик/ }))
-    await user.click(screen.getByRole('button', { name: /Следующий шаг/ }))
+    while (screen.queryByRole('button', { name: /Следующий шаг/ })) {
+      await user.click(screen.getByRole('button', { name: /Следующий шаг/ }))
+    }
     await user.click(screen.getByRole('button', { name: /Начать тренировку/ }))
 
     for (let question = 1; question <= 5; question += 1) {
       await solveCurrentExample(user)
-      const selfCheck = await screen.findByRole('list', { name: 'Самопроверка по разрядам' })
-      expect(within(selfCheck).getByText('Единицы')).toBeInTheDocument()
-      expect(within(selfCheck).getByText('Десятки')).toBeInTheDocument()
-      await user.click(await screen.findByRole('button', { name: /Я сверил каждый шаг/ }))
+      const selfCheck = await screen.findByTestId('self-check-step')
+      expect(selfCheck).toHaveTextContent('ШАГ 1 ИЗ')
+      expect(selfCheck).toHaveTextContent('Считаем единицы')
+      let sawTens = false
+      while (screen.queryByRole('button', { name: /Следующий шаг/ })) {
+        await user.click(screen.getByRole('button', { name: /Следующий шаг/ }))
+        if (screen.getByTestId('self-check-step').textContent?.includes('Считаем десятки')) sawTens = true
+      }
+      expect(sawTens).toBe(true)
       const actionName = question === 5 ? /Завершить урок/ : /Следующий пример/
       await user.click(await screen.findByRole('button', { name: actionName }))
     }

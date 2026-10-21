@@ -884,3 +884,50 @@ h2 { margin-bottom: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.15; }
   .lesson-page .finish-illustration { width: 92px; height: 86px; }
   .lesson-page .finish-illustration .owl-illustration { width: 82px !important; height: 82px !important; }
 }
+
+/* One clear action per lesson step */
+.lesson-page .place-explorer-card { display: grid; gap: 12px; }
+.lesson-page .place-explorer-heading { display: grid; justify-items: start; gap: 8px; margin: 0; }
+.lesson-page .place-explorer-heading .eyebrow { margin: 0; }
+.lesson-page .place-explorer-heading h1 { margin: 0; }
+.lesson-page .model-example-pill { display: inline-flex; min-height: 42px; align-items: center; gap: 12px; padding: 5px 15px; border: 1px solid #e5e0f2; border-radius: 14px; background: #f8f6ff; color: #514778; font-size: 1.375rem; font-weight: 900; }
+.lesson-page .model-current-card { display: grid; gap: 13px; margin: 0; padding: 17px; }
+.lesson-page .model-current-heading { gap: 6px; }
+.lesson-page .model-current-heading h2 { margin: 0; color: #514778; font-size: 1.375rem; line-height: 1.2; }
+.lesson-page .model-current-heading strong { color: #35445c; font-size: 1.0625rem; line-height: 1.4; }
+.lesson-page .model-action-visual { display: flex; min-height: 88px; align-items: center; justify-content: center; gap: 12px; padding: 12px; border: 1px solid #e7e2f2; border-radius: 16px; background: #fff; }
+.lesson-page .model-amount { display: grid; min-width: 76px; min-height: 62px; align-content: center; justify-items: center; gap: 2px; padding: 6px 10px; border-radius: 13px; background: #f6f3ff; color: #514778; text-align: center; }
+.lesson-page .model-amount strong { font-size: 1.75rem; line-height: 1; }
+.lesson-page .model-amount small { color: #525e73; font-size: .8125rem; font-weight: 800; line-height: 1.25; }
+.lesson-page .model-operation-sign { color: #7560df; font-size: 1.5rem; font-weight: 900; }
+.lesson-page .model-leftover-note { margin: -5px 0 0; color: #4f5a70; font-size: .9375rem; text-align: center; }
+.lesson-page .model-choice-button { min-height: 58px; font-size: 1.375rem; }
+.lesson-page .model-choice-button-correct { border-color: #65b37e; background: #eaf7ee; color: #286943; }
+.lesson-page .model-exchange-button { width: min(360px, 100%); min-height: 54px; justify-self: center; }
+.lesson-page .model-action-done { margin: 0; color: #2f6f4b; font-weight: 800; text-align: center; }
+.lesson-page .model-next-button { width: min(360px, 100%); justify-self: center; }
+.lesson-page .model-complete-card h2 { margin: 0; color: #397253; font-size: 1.5rem; }
+.lesson-page .model-complete-card p { margin: 0; color: #4f5a70; font-size: 1rem; line-height: 1.45; }
+.lesson-page .model-feedback { margin: 0; }
+.lesson-page .model-hint-button { min-height: 46px; }
+.lesson-page .demo-step-counter { font-weight: 900; }
+.lesson-page .demo-explanation-card { align-items: center; }
+.lesson-page .demo-explanation-card .eyebrow { margin: 0 0 5px; }
+.lesson-page .demo-explanation-card p:last-child { color: #35445c; font-size: 1.125rem; font-weight: 700; line-height: 1.45; }
+.lesson-page .self-check-step-card { display: grid; width: 100%; justify-items: center; gap: 9px; padding: 16px; border: 1px solid #d6e9dc; border-radius: 15px; background: #fff; text-align: center; }
+.lesson-page .self-check-step-progress { color: #3f7058; font-size: .8125rem; font-weight: 900; letter-spacing: .06em; }
+.lesson-page .self-check-step-card strong { color: #354e3d; font-size: 1.125rem; }
+.lesson-page .self-check-step-card p { margin: 0; color: #45594c; font-size: 1.0625rem; line-height: 1.45; }
+.lesson-page .self-check-step-card .self-check-exchange { display: flex; align-items: center; gap: 10px; color: #514778; font-size: 1.125rem; font-weight: 900; }
+.lesson-page .self-check-step-card .self-check-digit { display: inline-grid; min-width: 46px; min-height: 46px; place-items: center; border-radius: 12px; background: #eff9f2; color: #2f6f4b; font-size: 1.5rem; }
+
+@media (max-width: 650px) {
+  .lesson-page .model-current-card { padding: 13px; }
+  .lesson-page .model-action-visual { min-height: 72px; gap: 7px; padding: 8px; }
+  .lesson-page .model-amount { min-width: 62px; min-height: 54px; padding: 5px 7px; }
+  .lesson-page .model-amount strong { font-size: 1.5rem; }
+  .lesson-page .model-amount small { font-size: .75rem; }
+  .lesson-page .model-operation-sign { font-size: 1.25rem; }
+  .lesson-page .model-choice-button { min-height: 52px; }
+  .lesson-page .demo-explanation-card p:last-child { font-size: 1rem; }
+}
