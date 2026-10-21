@@ -7,7 +7,7 @@ import { ColumnDisplay } from '../components/ColumnDisplay'
 import { Keypad } from '../components/Keypad'
 import { Owl } from '../components/Owl'
 import { PlaceValueExplorer } from '../components/PlaceValueExplorer'
-import { getSelfCheckStepText, getSelfCheckStepTitle } from './lessonSelfCheck'
+import { buildLessonMicroSteps } from './lessonSelfCheck'
 import { plural, EXAMPLES } from '../plural'
 
 interface LessonScreenProps {
@@ -44,6 +44,21 @@ const TEN_DOT_POSITIONS = [
   [24, 79], [48, 79], [72, 79], [96, 79]
 ] as const
 
+const PLACE_LABELS = ['единицы', 'десятки', 'сотни', 'тысячи'] as const
+
+function getPlaceLabel(place: number): string {
+  return PLACE_LABELS[place] ?? 'разряд'
+}
+
+function getAnswerExplanation(step: ColumnStep, operation: 'add' | 'subtract'): string {
+  if (step.isFinalCarry) return `Записываем цифру ${step.carryIn}.`
+  if (operation === 'add') {
+    const carry = step.carryIn > 0 ? ` + ${step.carryIn}` : ''
+    return `${step.aDigit} + ${step.bDigit}${carry} = ${step.subtotal}.`
+  }
+  return `${step.aDigit} − ${step.bDigit} = ${step.expectedDigit}.`
+}
+
 function WarmupPlaceValueDiagram() {
   return (
     <div className="warmup-model-diagram" role="group" aria-label="Наглядная модель точки и треугольника">
@@ -66,26 +81,19 @@ function WarmupPlaceValueDiagram() {
 }
 
 function getPromptHint(step: ColumnStep, operation: 'add' | 'subtract'): string {
-  if (step.isFinalCarry) return `Перенесённую единицу запиши в разряд ${step.placeName}.`
+  if (step.isFinalCarry) return `Запиши ${step.carryIn} в ${step.placeName}.`
   if (operation === 'add') {
-    const carryNote = step.carryIn > 0 ? ' Не забудь прибавить ещё одну перенесённую единицу.' : ''
-    return `Сколько будет ${step.aDigit} + ${step.bDigit}?${carryNote} Если единиц получится больше девяти, подумай, как сгруппировать их по разрядам.`
+    const carry = step.carryIn > 0 ? ` + ${step.carryIn}` : ''
+    return `Посчитай ${step.aDigit} + ${step.bDigit}${carry}.`
   }
   if (step.borrow) {
-    const zeroNote = step.borrow.fromPlace > step.place + 1 ? ' При размене каждый промежуточный ноль станет 9 в своём разряде.' : ''
-    return `В разряде ${step.placeName} пока ${step.originalADigit}, а нужно вычесть ${step.bDigit}. Какой ближайший старший разряд можно разменять?${zeroNote}`
+    const fromPlace = step.borrow.fromPlace
+    const from = fromPlace === 2 ? 'сотня' : fromPlace === 1 ? 'десяток' : 'тысяча'
+    const targetPlace = fromPlace - 1
+    const target = targetPlace === 0 ? 'единиц' : targetPlace === 1 ? 'десятков' : 'сотен'
+    return `Обмен: 1 ${from} → 10 ${target}.`
   }
-  return `Вычти ${step.bDigit} из ${step.aDigit} в разряде ${step.placeName}. Начинаем справа налево.`
-}
-
-function getFirstInstruction(operation: 'add' | 'subtract'): string {
-  return operation === 'add'
-    ? 'Сначала рассмотри единицы и десятки отдельно. Сколько единиц получится и можно ли все оставить в этом разряде?'
-    : 'Сначала рассмотри единицы. Хватит ли их, чтобы выполнить вычитание? Если нет, подумай, какой разряд может помочь.'
-}
-
-function describeStep(step: ColumnStep): string {
-  return step.explanation
+  return `Посчитай ${step.aDigit} − ${step.bDigit}.`
 }
 
 export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onRecordCorrect, onFinishLesson }: LessonScreenProps) {
@@ -98,15 +106,15 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
   const [demoIndex, setDemoIndex] = useState(-1)
   const [questionNumber, setQuestionNumber] = useState(1)
   const [stepIndex, setStepIndex] = useState(0)
+  const [selfCheckIndex, setSelfCheckIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [hintStage, setHintStage] = useState(0)
   const [hintUsed, setHintUsed] = useState(false)
   const [mistakes, setMistakes] = useState(0)
   const [errorText, setErrorText] = useState<string | null>(null)
-  const [coachMessage, setCoachMessage] = useState('Я рядом. Сначала единицы, потом десятки!')
+  const [coachMessage, setCoachMessage] = useState('Сначала единицы, потом десятки.')
   const [showHintAnswer, setShowHintAnswer] = useState(false)
   const [questionComplete, setQuestionComplete] = useState(false)
-  const [selfCheckAck, setSelfCheckAck] = useState(false)
   const [reflectionChoice, setReflectionChoice] = useState<ReflectionChoice | null>(null)
   const [interactionCount, setInteractionCount] = useState(0)
   const [cleanSolved, setCleanSolved] = useState(0)
@@ -115,10 +123,25 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
   const finishGuard = useRef(false)
 
   const analysis = useMemo(() => analyzeColumn(example.a, example.b, example.operation), [example])
+  const lessonSteps = useMemo(() => buildLessonMicroSteps(analysis), [analysis])
   const inputSteps = analysis.inputSteps
   const currentStep = inputSteps[stepIndex] ?? null
-  const demoVisibleSteps = analysis.steps.slice(0, demoIndex + 1)
-  const demoAnswers = Object.fromEntries(demoVisibleSteps.map((step) => [step.place, step.expectedDigit]))
+  const demoStep = lessonSteps[demoIndex] ?? null
+  const selfCheckStep = lessonSteps[selfCheckIndex] ?? null
+  const seenDemoWrites = lessonSteps.slice(0, demoIndex + 1).filter((step) => step.kind === 'write' && step.digit !== undefined)
+  const demoAnswers = Object.fromEntries(seenDemoWrites.map((step) => [step.place, step.digit!]))
+  const demoWrittenPlaces = new Set(seenDemoWrites.map((step) => step.place))
+  const demoVisiblePlaces = new Set(analysis.steps.filter((step) => {
+    if (!demoWrittenPlaces.has(step.place)) return false
+    if (step.carryOut <= 0) return true
+    const carryStepIndex = lessonSteps.findIndex((item) => item.kind === 'carry' && item.fromPlace === step.place)
+    if (carryStepIndex >= 0) return carryStepIndex <= demoIndex
+    const finalCarry = analysis.inputSteps.find((candidate) => candidate.isFinalCarry && candidate.place === step.place + 1)
+    if (!finalCarry) return true
+    const finalCarryIndex = lessonSteps.findIndex((item) => item.kind === 'write' && item.place === finalCarry.place && item.digit === finalCarry.expectedDigit)
+    return finalCarryIndex >= 0 && finalCarryIndex <= demoIndex
+  }).map((step) => step.place))
+  const demoVisibleSteps = analysis.steps.filter((step) => demoVisiblePlaces.has(step.place))
   const practiceVisibleSteps = analysis.steps.filter((step) => (
     answers[step.place] !== undefined || (step.place === currentStep?.place && !!step.borrow)
   ))
@@ -152,8 +175,8 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
       onRecordMistake(profile.id, levelId)
       playFeedback('gentle-wrong', profile.settings.soundEnabled)
       vibrate(8, profile.settings.hapticsEnabled)
-      setErrorText(`${getPromptHint(currentStep, example.operation)} Проверь разрядную модель или попроси подсказку — правильный ответ не теряется.`)
-      setCoachMessage('Так бывает! Ошибка помогает заметить, что стоит проверить. Ты справишься 💛')
+      setErrorText(getPromptHint(currentStep, example.operation))
+      setCoachMessage('Ничего страшного. Попробуй ещё раз.')
       return
     }
 
@@ -169,7 +192,7 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
     if (isLastStep) {
       const wasIndependent = mistakes === 0 && !hintUsed
       setQuestionComplete(true)
-      setSelfCheckAck(false)
+      setSelfCheckIndex(0)
       setSolvedCount((count) => count + 1)
       setCleanSolved((count) => count + (wasIndependent ? 1 : 0))
       onRecordCorrect(profile.id, levelId, wasIndependent, hintUsed)
@@ -206,7 +229,7 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
       setHintStage(2)
       setHintUsed(true)
       setShowHintAnswer(true)
-      setCoachMessage(`${currentStep.explanation} Правильная цифра — ${currentStep.expectedDigit}.`)
+      setCoachMessage('Посмотри на подсказку с ответом.')
       return
     }
     setHintStage(1)
@@ -227,10 +250,10 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
     setHintStage(0)
     setHintUsed(false)
     setQuestionComplete(false)
-    setSelfCheckAck(false)
+    setSelfCheckIndex(0)
     setErrorText(null)
     setStage('practice')
-    setCoachMessage('Решаем справа налево. Ты можешь попросить подсказку в любой момент.')
+    setCoachMessage('Не спеши. Я рядом.')
   }
 
   const continueFromQuestion = () => {
@@ -252,10 +275,10 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
     setHintStage(0)
     setHintUsed(false)
     setQuestionComplete(false)
-    setSelfCheckAck(false)
+    setSelfCheckIndex(0)
     setErrorText(null)
     setShowHintAnswer(false)
-    setCoachMessage('Новый пример — новый шанс потренироваться!')
+    setCoachMessage('Новый пример. Не спеши.')
   }
 
   const startModel = () => {
@@ -285,18 +308,28 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
   }
 
   const nextDemoStep = () => {
-    if (demoIndex < inputSteps.length - 1) {
+    if (demoIndex < lessonSteps.length - 1) {
       setDemoIndex((index) => index + 1)
       return
     }
     beginPractice()
   }
 
+  const advanceSelfCheck = () => {
+    if (selfCheckIndex < lessonSteps.length - 1) {
+      setSelfCheckIndex((index) => index + 1)
+      return
+    }
+    continueFromQuestion()
+  }
+
   const activePlace = stage === 'demo'
-    ? inputSteps[demoIndex]?.place ?? null
-    : stage === 'practice' && !questionComplete
-      ? currentStep?.place ?? null
-      : null
+    ? demoStep?.kind === 'exchange' ? demoStep.toPlace ?? demoStep.place : demoStep?.place ?? null
+    : stage === 'practice' && questionComplete
+      ? selfCheckStep?.kind === 'exchange' ? selfCheckStep.toPlace ?? selfCheckStep.place : selfCheckStep?.place ?? null
+      : stage === 'practice'
+        ? currentStep?.place ?? null
+        : null
   const visibleSteps = stage === 'demo' ? demoVisibleSteps : practiceVisibleSteps
 
   return (
@@ -309,13 +342,12 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
 
       {stage === 'intro' && (
         <section className="lesson-content lesson-intro" aria-labelledby="lesson-title">
-          <div className="lesson-coach-card"><Owl size={68} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /><div><strong>Привет, {profile.name}!</strong><p>Сегодня ты сначала попробуешь сам найти способ. БУК поможет построить модель и сверить открытие.</p></div></div>
-          <div className="lesson-title-block"><p className="eyebrow">ИССЛЕДУЕМ И ПРОВЕРЯЕМ</p><h1 id="lesson-title">{level.title}</h1><p>{level.description}</p></div>
+          <div className="lesson-coach-card"><Owl size={68} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /><div><strong>Привет, {profile.name}!</strong><p>Сначала вспомним нужный способ. Потом разберём пример и потренируемся.</p></div></div>
+          <div className="lesson-title-block"><p className="eyebrow">СЕГОДНЯ УЗНАЕМ</p><h1 id="lesson-title">{level.title}</h1><p>{level.description}</p></div>
           <div className="column-stage-card">
             <ColumnDisplay analysis={analysis} />
-            <div className="algorithm-note"><span className="algorithm-icon" aria-hidden="true">{example.operation === 'add' ? '＋' : '−'}</span><div><strong>Пробное задание</strong><p>{getFirstInstruction(example.operation)}</p></div></div>
           </div>
-          <div className="lesson-footer-actions"><button className="primary-button" type="button" onClick={startModel}>Попробовать и исследовать <span aria-hidden="true">→</span></button><span className="no-pressure-note">Без таймера и штрафов. Можно остановиться в любой момент.</span></div>
+          <div className="lesson-footer-actions"><button className="primary-button" type="button" onClick={startModel}>Начать урок <span aria-hidden="true">→</span></button><span className="no-pressure-note">Без таймера и штрафов. Можно остановиться в любой момент.</span></div>
         </section>
       )}
 
@@ -340,17 +372,17 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
         </section>
       )}
 
-      {stage === 'demo' && (
+      {stage === 'demo' && demoStep && (
         <section className="lesson-content lesson-demo" aria-labelledby="demo-title">
-          <div className="demo-intro-line"><span className="demo-step-counter">ШАГ {demoIndex + 1} ИЗ {inputSteps.length}</span><span className="demo-direction">Считаем справа налево ←</span></div>
+          <div className="demo-intro-line"><span className="demo-step-counter">ШАГ {demoIndex + 1} ИЗ {lessonSteps.length}</span><span className="demo-direction">Пример: {example.a} {example.operation === 'add' ? '+' : '−'} {example.b}</span></div>
           <div className="column-stage-card demo-column-card">
             <ColumnDisplay analysis={analysis} answers={demoAnswers} activePlace={activePlace} visibleSteps={demoVisibleSteps} demo />
           </div>
           <div className="demo-explanation-card" aria-live="polite">
             <div className="coach-avatar-small"><Owl size={48} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /></div>
-            <div><p className="eyebrow">ФИКСИРУЕМ НАЙДЕННЫЙ СПОСОБ</p><h1 id="demo-title">{inputSteps[demoIndex]?.isFinalCarry ? 'Записываем перенос' : `Разряд ${inputSteps[demoIndex]?.placeName ?? ''}`}</h1><p>{inputSteps[demoIndex] ? describeStep(inputSteps[demoIndex]!) : 'Сопоставь модель с записью по разрядам.'}</p></div>
+            <div><p className="eyebrow">ОДИН ШАГ</p><h1 id="demo-title">{demoStep.title}</h1><p>{demoStep.text}</p></div>
           </div>
-          <div className="lesson-footer-actions"><button className="primary-button" type="button" onClick={nextDemoStep}>{demoIndex < inputSteps.length - 1 ? 'Следующий шаг' : 'Начать тренировку'} <span aria-hidden="true">→</span></button><span className="no-pressure-note">Пример разбираем от единиц к старшим разрядам</span></div>
+          <div className="lesson-footer-actions"><button className="primary-button" type="button" onClick={nextDemoStep}>{demoIndex < lessonSteps.length - 1 ? 'Следующий шаг' : 'Начать тренировку'} <span aria-hidden="true">→</span></button></div>
         </section>
       )}
 
@@ -361,7 +393,7 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
             <div className="question-dots" aria-hidden="true">{Array.from({ length: lessonSize }, (_, index) => <i className={index < questionNumber ? 'question-dot question-dot-active' : 'question-dot'} key={index} />)}</div>
           </div>
           {questionComplete ? (
-            <p className="visually-hidden" role="status" aria-live="polite">Пример решён. Сверь шаги решения ниже.</p>
+            <p className="visually-hidden" role="status" aria-live="polite">Пример решён. Сверяем ответ по одному шагу.</p>
           ) : (
             <div className="coach-message-card" aria-live="polite">
               <Owl size={50} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} />
@@ -370,35 +402,35 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
           )}
           <div className={`column-stage-card practice-column-card${errorText ? ' practice-column-error' : ''}`}>
             <ColumnDisplay analysis={analysis} answers={answers} activePlace={activePlace} visibleSteps={visibleSteps} />
-            {!questionComplete && <p className="column-helper-text">Считай разряд {currentStep.placeName}.</p>}
+            {!questionComplete && !errorText && <p className="column-helper-text">Сейчас считаем: {getPlaceLabel(currentStep.place)}.</p>}
           </div>
 
           {errorText ? (
-            <div className="error-action-row"><span className="soft-correction"><span aria-hidden="true">💛</span> Ошибка — это подсказка, не беда.</span><button className="primary-button compact-button" type="button" onClick={dismissError}>Понятно, попробую ещё раз</button></div>
+            <div className="error-action-row"><span className="soft-correction"><span aria-hidden="true">💛</span> Ничего страшного.</span><button className="primary-button compact-button" type="button" onClick={dismissError}>Попробовать ещё раз</button></div>
           ) : questionComplete ? (
             <section className="question-complete-card" aria-labelledby="question-complete-title">
               <div className="complete-stars" aria-hidden="true">✦ ✦ ✦</div>
               <h2 id="question-complete-title">{mistakes === 0 && !hintUsed ? 'Самостоятельно!' : 'Ты справился!'}</h2>
-              <p>Сверь шаги по разрядам. Ошибка — повод спокойно разобраться.</p>
-              <ol className="self-check-list" aria-label="Самопроверка по разрядам">
-                {analysis.steps.map((step) => (
-                  <li key={step.place}>
-                    <span className="self-check-step-title">{getSelfCheckStepTitle(step)}</span>
-                    <span className="self-check-step-detail">{getSelfCheckStepText(step, example.operation)}</span>
-                  </li>
-                ))}
-              </ol>
-              <button className="secondary-button self-check-button" type="button" onClick={() => setSelfCheckAck(true)} aria-pressed={selfCheckAck}>{selfCheckAck ? 'Шаги сверены ✓' : 'Я сверил каждый шаг'}</button>
-              <button className="primary-button" type="button" onClick={continueFromQuestion} disabled={!selfCheckAck}>{questionNumber < lessonSize ? 'Следующий пример' : 'Завершить урок'} <span aria-hidden="true">→</span></button>
+              <p>Проверим ответ по одному шагу.</p>
+              {selfCheckStep && (
+                <div className="self-check-step-card" aria-live="polite" data-testid="self-check-step">
+                  <span className="self-check-step-progress">ШАГ {selfCheckIndex + 1} ИЗ {lessonSteps.length}</span>
+                  <strong>{selfCheckStep.title}</strong>
+                  <p>{selfCheckStep.text}</p>
+                </div>
+              )}
+              <button className="primary-button" type="button" onClick={advanceSelfCheck}>
+                {selfCheckIndex < lessonSteps.length - 1 ? 'Следующий шаг' : questionNumber < lessonSize ? 'Следующий пример' : 'Завершить урок'} <span aria-hidden="true">→</span>
+              </button>
             </section>
           ) : (
             <>
               <Keypad onDigit={attemptDigit} onErase={eraseLastDigit} disabled={false} eraseDisabled={stepIndex === 0} />
               <div className="lesson-help-row">
                 <button className="hint-button" type="button" onClick={askHint} aria-label="Получить подсказку"><span aria-hidden="true">💡</span><span>Подсказка</span>{hintStage > 0 && hintStage < 2 && profile.settings.hintsMode === 'question' && <small>ещё раз — ответ</small>}</button>
-                <div className="live-step-note">Шаг {stepIndex + 1} из {inputSteps.length} · единицы первыми</div>
+                <div className="live-step-note">Шаг {stepIndex + 1} из {inputSteps.length}</div>
               </div>
-              {showHintAnswer && <div className="hint-answer-card" role="status"><div><strong>Правильная цифра: {currentStep.expectedDigit}</strong><p>{currentStep.explanation}</p></div><button className="hint-insert-button" type="button" onClick={() => attemptDigit(currentStep.expectedDigit)}>Вписать цифру</button></div>}
+              {showHintAnswer && <div className="hint-answer-card" role="status"><div><strong>Правильная цифра: {currentStep.expectedDigit}</strong><p>{getAnswerExplanation(currentStep, example.operation)}</p></div><button className="hint-insert-button" type="button" onClick={() => attemptDigit(currentStep.expectedDigit)}>Вписать цифру</button></div>}
             </>
           )}
         </section>
@@ -413,9 +445,9 @@ export function LessonScreen({ profile, levelId, onExit, onRecordMistake, onReco
           <div className="reflection-panel" role="group" aria-labelledby="reflection-title">
             <strong id="reflection-title">Что помогло тебе сегодня?</strong>
             <div className="reflection-options">
-              <button className={reflectionChoice === 'model' ? 'reflection-option reflection-option-selected' : 'reflection-option'} type="button" aria-pressed={reflectionChoice === 'model'} onClick={() => setReflectionChoice('model')}>Модель разрядов</button>
+              <button className={reflectionChoice === 'model' ? 'reflection-option reflection-option-selected' : 'reflection-option'} type="button" aria-pressed={reflectionChoice === 'model'} onClick={() => setReflectionChoice('model')}>Фишки</button>
               <button className={reflectionChoice === 'help' ? 'reflection-option reflection-option-selected' : 'reflection-option'} type="button" aria-pressed={reflectionChoice === 'help'} onClick={() => setReflectionChoice('help')}>Подсказка БУКа</button>
-              <button className={reflectionChoice === 'self-check' ? 'reflection-option reflection-option-selected' : 'reflection-option'} type="button" aria-pressed={reflectionChoice === 'self-check'} onClick={() => setReflectionChoice('self-check')}>Самопроверка</button>
+              <button className={reflectionChoice === 'self-check' ? 'reflection-option reflection-option-selected' : 'reflection-option'} type="button" aria-pressed={reflectionChoice === 'self-check'} onClick={() => setReflectionChoice('self-check')}>Проверка ответа</button>
             </div>
             {reflectionChoice && <p className="reflection-feedback" role="status">Спасибо, что заметил, какой способ помог.</p>}
           </div>
