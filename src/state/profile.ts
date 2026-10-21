@@ -1,6 +1,7 @@
 import type { LevelId } from '../content/levels'
 
 export type HintMode = 'question' | 'answer' | 'off'
+export type MascotVisibility = 'on' | 'home' | 'off'
 
 export const ACCESSORY_CATALOG = Object.freeze([
   { id: 'cap', name: 'Кепка', icon: '🧢', price: 8 },
@@ -17,6 +18,7 @@ export interface ProfileSettings {
   keyboardEnabled: boolean
   defaultLevel: LevelId
   hintsMode: HintMode
+  mascotVisibility?: MascotVisibility
 }
 
 export interface LevelProgress {
@@ -72,7 +74,8 @@ export const DEFAULT_SETTINGS: ProfileSettings = Object.freeze({
   hapticsEnabled: true,
   keyboardEnabled: false,
   defaultLevel: 1,
-  hintsMode: 'question'
+  hintsMode: 'question',
+  mascotVisibility: 'on'
 })
 
 const EMPTY_LEVEL_PROGRESS: LevelProgress = Object.freeze({
@@ -166,6 +169,7 @@ export function isChildProfile(value: unknown): value is ChildProfile {
     && typeof settings.keyboardEnabled === 'boolean'
     && typeof settings.defaultLevel === 'number' && Number.isInteger(settings.defaultLevel) && settings.defaultLevel >= 1 && settings.defaultLevel <= 13
     && (settings.hintsMode === 'question' || settings.hintsMode === 'answer' || settings.hintsMode === 'off')
+    && (settings.mascotVisibility === undefined || settings.mascotVisibility === 'on' || settings.mascotVisibility === 'home' || settings.mascotVisibility === 'off')
     && validCount(progress?.totalSolved)
     && validCount(progress?.totalErrors)
     && validCount(progress?.practiceMinutes)

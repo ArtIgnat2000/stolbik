@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { getLevelInfo, LEVELS, type LevelId } from '../../content/levels'
 import { getDailyProgress, getHighestUnlockedLevel, getLevelProgress, type ChildProfile } from '../../state/profile'
 import { getDailyTaskState } from '../../state/store'
-import { FloatingOwl } from '../components/FloatingOwl'
-import { plural, CROWNS, KEYS } from '../plural'
+import { InviteFriend } from '../components/InviteFriend'
 import { Owl } from '../components/Owl'
+import { plural, CROWNS, KEYS } from '../plural'
 
 interface HomeScreenProps {
   profile: ChildProfile
@@ -82,6 +83,7 @@ export function HomeScreen({
   onClaimChest,
   onDismissWarning
 }: HomeScreenProps) {
+  const [inviteOpen, setInviteOpen] = useState(false)
   const unlocked = getHighestUnlockedLevel(profile)
   const continueLevel = Math.min(profile.settings.defaultLevel, unlocked) as LevelId
   const daily = getDailyProgress(profile)
@@ -96,6 +98,15 @@ export function HomeScreen({
         </button>
         <div className="header-actions">
           <button className="crystal-pill" type="button" onClick={onOpenShop} aria-label={`Кристаллов: ${profile.rewards.crystals}. Открыть магазин`}><span aria-hidden="true">💎</span> {profile.rewards.crystals}</button>
+          <button
+            className="icon-button invite-button"
+            type="button"
+            aria-label="Позвать друга"
+            title="Позови друга — ссылка и QR-код"
+            onClick={() => setInviteOpen(true)}
+          >
+            🤝
+          </button>
           <button className="profile-pill" type="button" onClick={onOpenProfiles} aria-label={`Профиль ${profile.name}, сменить профиль`}>
             <span className="tiny-avatar" style={{ backgroundColor: profile.color }}><Owl size={32} accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} /></span>
             <span>{profile.name}</span><span aria-hidden="true">⌄</span>
@@ -195,8 +206,9 @@ export function HomeScreen({
         </aside>
       </div>
 
+      {inviteOpen && <InviteFriend onClose={() => setInviteOpen(false)} />}
+
       <footer className="app-footer">Учимся думать, а не торопиться · Столбик хранит прогресс только на этом устройстве</footer>
-      <FloatingOwl accent={profile.rewards.accentColor} accessories={profile.rewards.accessoriesEquipped} />
     </main>
   )
 }

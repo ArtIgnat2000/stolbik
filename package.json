@@ -1,19 +1,24 @@
 {
   "name": "stolbik",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "СТОЛБИК — сложение и вычитание столбиком, 2 класс. Mobile-first офлайн PWA.",
   "type": "module",
   "scripts": {
+    "pickup": "node scripts/pickup.mjs",
     "dev": "vite --host 0.0.0.0",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 0.0.0.0",
+    "preview:build": "VITE_BASE=/ vite build --outDir preview",
     "typecheck": "tsc --noEmit",
-    "pickup": "npm install && npm run typecheck && npm run content:check && npm run test:engine && npm run test:smoke && npm run audit:storage && npm run build && npm run test:boot",
+    "release:check": "node scripts/release-check.mjs",
+    "test:release": "node --test scripts/release-check.test.mjs",
     "content:check": "tsx src/content/check.ts",
     "test:engine": "vitest run src/engine",
     "test:smoke": "vitest run src/tests src/ui",
     "test:boot": "tsx scripts/test-boot.ts",
-    "audit:storage": "vitest run src/platform/storage.test.ts"
+    "audit:storage": "vitest run src/platform/storage.test.ts",
+    "test:qr": "node scripts/qr-verify.mjs"
   },
   "dependencies": {
     "idb": "^8.0.3",
@@ -37,5 +42,8 @@
     "vite": "^6.0.11",
     "vite-plugin-pwa": "^0.21.1",
     "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }
