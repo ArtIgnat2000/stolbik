@@ -35,11 +35,22 @@ jobs:
       - name: Установить зависимости
         run: npm ci
 
+      - name: Проверить контент и тесты
+        run: |
+          npm run typecheck
+          npm run content:check
+          npm run test:engine
+          npm run test:smoke
+          npm run audit:storage
+
       - name: Собрать приложение для GitHub Pages
         run: npm run build
         env:
           VITE_BASE: /stolbik/
           VITE_COMMIT_SHA: ${{ github.sha }}
+
+      - name: Проверить стартовую оболочку и бандл
+        run: npm run test:boot
 
       - name: Загрузить сборку Pages
         uses: actions/upload-pages-artifact@v3

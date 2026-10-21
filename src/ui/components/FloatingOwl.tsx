@@ -9,7 +9,15 @@ const HELLO_LINES = [
   'Ух-ты! БУК танцует от радости! ✨'
 ]
 
-export function FloatingOwl({ accent, accessories }: { accent: string; accessories: readonly string[] }) {
+export function FloatingOwl({
+  accent,
+  accessories,
+  raised = false
+}: {
+  accent: string
+  accessories: readonly string[]
+  raised?: boolean
+}) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [message, setMessage] = useState('Привет! Я БУК. Нажми на меня, если нужна поддержка.')
   const [collapsed, setCollapsed] = useState(false)
@@ -82,7 +90,10 @@ export function FloatingOwl({ accent, accessories }: { accent: string; accessori
 
   if (hidden) return null
   return (
-    <div className={`floating-owl${collapsed ? ' floating-owl-collapsed' : ''}${dancing ? ' floating-owl-dancing' : ''}`} style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}>
+    <div
+      className={`floating-owl${collapsed ? ' floating-owl-collapsed' : ''}${dancing ? ' floating-owl-dancing' : ''}${raised ? ' floating-owl-raised' : ''}`}
+      style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
+    >
       {collapsed ? (
         <button className="owl-collapse-button" type="button" aria-label="Показать БУКа" onClick={() => setCollapsed(false)}>
           <Owl size={40} accent={accent} accessories={accessories} />
@@ -103,7 +114,7 @@ export function FloatingOwl({ accent, accessories }: { accent: string; accessori
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault()
                 setTapCount((count) => count + 1)
-                setMessage(HELLO_LINES[(tapCount) % HELLO_LINES.length] ?? HELLO_LINES[0]!)
+                setMessage(HELLO_LINES[tapCount % HELLO_LINES.length] ?? HELLO_LINES[0]!)
               }
             }}
           >

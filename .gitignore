@@ -1,8 +1,19 @@
 node_modules/
 dist/
+dev-dist/
 coverage/
 *.log
 .DS_Store
+*.local
 .env
 .env.*
 !.env.example
+# временная сборка смоук-теста, проверки QR и тестов релиза (скрипты убирают их сами)
+.smoke
+.qr-check
+.release-test-*
+# превью-сборка для показа на телефоне/в браузере
+preview
+# кэш инкрементальной сборки tsc
+tsconfig.tsbuildinfo
+.venv/

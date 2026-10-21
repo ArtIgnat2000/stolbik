@@ -1,6 +1,25 @@
 import { create } from 'zustand'
-import { loadLocalData, requestPersistentStorage, saveProfile, setActiveProfileId } from '../platform/database'
-import { ACCESSORY_CATALOG, createProfile, getDailyProgress, getHighestUnlockedLevel, type ChildProfile, type DailyProgress, type HintMode, type LevelProgress, type ProfileSettings } from './profile'
+import {
+  archiveProfile,
+  loadLocalData,
+  replaceAllProfiles,
+  requestPersistentStorage,
+  restoreSnapshotSlot,
+  restoreTrashEntry,
+  saveProfile,
+  setActiveProfileId
+} from '../platform/database'
+import {
+  ACCESSORY_CATALOG,
+  createProfile,
+  getDailyProgress,
+  getHighestUnlockedLevel,
+  type ChildProfile,
+  type DailyProgress,
+  type HintMode,
+  type LevelProgress,
+  type ProfileSettings
+} from './profile'
 import type { LevelId } from '../content/levels'
 
 const EMPTY_PROFILES: ChildProfile[] = []
@@ -15,7 +34,10 @@ export interface AppState {
   isLoading: boolean
   storageWarning: string | null
   boot: () => Promise<void>
+  reloadFromStorage: () => Promise<void>
   createChildProfile: (name: string, color?: string) => string
+  renameChildProfile: (profileId: string, name: string, color?: string) => void
+  deleteChildProfile: (profileId: string) => void
   selectProfile: (profileId: string) => void
   updateSettings: (profileId: string, changes: Partial<ProfileSettings>) => void
   recordMistake: (profileId: string, levelId: LevelId) => void
@@ -28,6 +50,9 @@ export interface AppState {
   recolorMascot: (profileId: string, color: string) => boolean
   resetProgress: (profileId: string) => void
   restoreProfile: (profileId: string, imported: ChildProfile) => void
+  replaceAllFromBackup: (profiles: ChildProfile[], activeProfileId: string | null) => Promise<void>
+  restoreFromSnapshot: (slot: number) => Promise<boolean>
+  restoreProfileFromTrash: (entryId: string) => Promise<boolean>
   clearStorageWarning: () => void
 }
 
@@ -37,7 +62,7 @@ function todayKey(): string {
 
 function weekStartKey(dateKey: string): string {
   const date = new Date(`${dateKey}T00:00:00.000Z`)
-  date.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 6) % 7)
+  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7))
   return date.toISOString().slice(0, 10)
 }
 
@@ -46,11 +71,18 @@ function updateDaily(profile: ChildProfile, date: string, updater: (daily: Daily
   return { ...profile, rewards: { ...profile.rewards, daily: updater(daily) } }
 }
 
-async function persistSafely(profile: ChildProfile, set: StateSetter): Promise<void> {
+async function persistSafely(
+  profile: ChildProfile,
+  set: StateSetter,
+  reason: 'backup' | 'reset' | 'import' = 'backup'
+): Promise<void> {
   try {
-    await saveProfile(profile)
+    await saveProfile(profile, reason)
   } catch {
-    set({ storageWarning: 'Не удалось сохранить данные в этом браузере. Пока профиль открыт, занятия продолжатся; проверьте свободное место и разрешение на хранение.' })
+    set({
+      storageWarning:
+        'Не удалось сохранить данные в этом браузере. Пока профиль открыт, занятия продолжатся; проверьте свободное место и разрешение на хранение.'
+    })
   }
 }
 
@@ -63,7 +95,11 @@ function emptyLevelProgress(): LevelProgress {
   return { crowns: 0, solved: 0, cleanSolved: 0, errors: 0 }
 }
 
-function replaceLevelProgress(profile: ChildProfile, levelId: LevelId, transform: (previous: LevelProgress) => LevelProgress): ChildProfile {
+function replaceLevelProgress(
+  profile: ChildProfile,
+  levelId: LevelId,
+  transform: (previous: LevelProgress) => LevelProgress
+): ChildProfile {
   const key = String(levelId)
   const previous = profile.progress.levels[key] ?? emptyLevelProgress()
   return {
@@ -79,13 +115,16 @@ function updateProfileInStore(
   profileId: string,
   get: () => AppState,
   set: StateSetter,
-  updater: (profile: ChildProfile) => ChildProfile
+  updater: (profile: ChildProfile) => ChildProfile,
+  reason: 'backup' | 'reset' | 'import' = 'backup'
 ): ChildProfile | null {
   const current = get().profiles.find((candidate) => candidate.id === profileId)
   if (!current) return null
   const updated = updater(current)
-  set((state) => ({ profiles: state.profiles.map((candidate) => candidate.id === profileId ? updated : candidate) }))
-  void persistSafely(updated, set)
+  set((state) => ({
+    profiles: state.profiles.map((candidate) => (candidate.id === profileId ? updated : candidate))
+  }))
+  void persistSafely(updated, set, reason)
   return updated
 }
 
@@ -131,6 +170,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     return bootPromise
   },
 
+  reloadFromStorage: async () => {
+    try {
+      const data = await loadLocalData()
+      set({
+        profiles: data.profiles,
+        activeProfileId: data.activeProfileId,
+        isReady: true,
+        storageWarning: null
+      })
+    } catch {
+      /* ignore reload error */
+    }
+  },
+
   createChildProfile: (name, color) => {
     const profile = createProfile(name, color)
     set((state) => ({
@@ -143,6 +196,29 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ storageWarning: 'Профиль открыт, но не удалось запомнить его выбор на этом устройстве.' })
     })
     return profile.id
+  },
+
+  renameChildProfile: (profileId, name, color) => {
+    const cleanName = name.trim().slice(0, 18)
+    if (!cleanName) return
+    updateProfileInStore(profileId, get, set, (profile) => ({
+      ...profile,
+      name: cleanName,
+      color: color ?? profile.color
+    }))
+  },
+
+  deleteChildProfile: (profileId) => {
+    const remaining = get().profiles.filter((p) => p.id !== profileId)
+    const nextActiveId =
+      get().activeProfileId === profileId ? (remaining[0]?.id ?? null) : get().activeProfileId
+    set({
+      profiles: remaining,
+      activeProfileId: nextActiveId
+    })
+    void archiveProfile(profileId, 'delete').catch(() => {
+      set({ storageWarning: 'Не удалось обновить хранилище при удалении профиля.' })
+    })
   },
 
   selectProfile: (profileId) => {
@@ -163,11 +239,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   recordMistake: (profileId, levelId) => {
     const date = todayKey()
     updateProfileInStore(profileId, get, set, (profile) => {
-      const withLevel = replaceLevelProgress(profile, levelId, (previous) => ({ ...previous, errors: previous.errors + 1 }))
-      return updateDaily({
-        ...withLevel,
-        progress: { ...withLevel.progress, totalErrors: withLevel.progress.totalErrors + 1 }
-      }, date, (daily) => ({ ...daily, currentStreak: 0 }))
+      const withLevel = replaceLevelProgress(profile, levelId, (previous) => ({
+        ...previous,
+        errors: previous.errors + 1
+      }))
+      return updateDaily(
+        {
+          ...withLevel,
+          progress: { ...withLevel.progress, totalErrors: withLevel.progress.totalErrors + 1 }
+        },
+        date,
+        (daily) => ({ ...daily, currentStreak: 0 })
+      )
     })
   },
 
@@ -230,7 +313,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       const daysThisWeek = activityDays.filter((day) => day >= thisWeek && day < nextWeek).length
       const weeklyRewardClaims = [...withLevel.rewards.weeklyRewardClaims]
       let weeklyBonus = 0
-      for (const reward of [{ days: 3, crystals: 3 }, { days: 5, crystals: 5 }, { days: 7, crystals: 8 }]) {
+      for (const reward of [
+        { days: 3, crystals: 3 },
+        { days: 5, crystals: 5 },
+        { days: 7, crystals: 8 }
+      ]) {
         const claimId = `${thisWeek}:${reward.days}`
         if (daysThisWeek >= reward.days && !weeklyRewardClaims.includes(claimId)) {
           weeklyRewardClaims.push(claimId)
@@ -342,32 +429,97 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   resetProgress: (profileId) => {
-    updateProfileInStore(profileId, get, set, (profile) => {
-      const fresh = createProfile(profile.name, profile.color)
-      return { ...fresh, id: profile.id, createdAt: profile.createdAt, settings: profile.settings, avatar: profile.avatar }
-    })
+    updateProfileInStore(
+      profileId,
+      get,
+      set,
+      (profile) => {
+        const fresh = createProfile(profile.name, profile.color)
+        return { ...fresh, id: profile.id, createdAt: profile.createdAt, settings: profile.settings, avatar: profile.avatar }
+      },
+      'reset'
+    )
   },
 
   restoreProfile: (profileId, imported) => {
-    updateProfileInStore(profileId, get, set, (profile) => ({
-      ...imported,
-      id: profile.id,
-      name: profile.name,
-      color: profile.color,
-      createdAt: profile.createdAt
-    }))
+    updateProfileInStore(
+      profileId,
+      get,
+      set,
+      (profile) => ({
+        ...imported,
+        id: profile.id,
+        name: profile.name,
+        color: profile.color,
+        createdAt: profile.createdAt
+      }),
+      'import'
+    )
+  },
+
+  replaceAllFromBackup: async (profiles, activeProfileId) => {
+    await replaceAllProfiles(profiles, activeProfileId)
+    const resolvedActive =
+      activeProfileId && profiles.some((p) => p.id === activeProfileId)
+        ? activeProfileId
+        : profiles[0]?.id ?? null
+    set({
+      profiles,
+      activeProfileId: resolvedActive,
+      storageWarning: null
+    })
+  },
+
+  restoreFromSnapshot: async (slot) => {
+    try {
+      const restored = await restoreSnapshotSlot(slot)
+      if (!restored) return false
+      set({
+        profiles: restored.profiles,
+        activeProfileId: restored.activeProfileId,
+        storageWarning: null
+      })
+      return true
+    } catch {
+      return false
+    }
+  },
+
+  restoreProfileFromTrash: async (entryId) => {
+    try {
+      const restored = await restoreTrashEntry(entryId)
+      if (!restored) return false
+      set((state) => {
+        const exists = state.profiles.some((p) => p.id === restored.id)
+        const nextProfiles = exists
+          ? state.profiles.map((p) => (p.id === restored.id ? restored : p))
+          : [...state.profiles, restored]
+        return {
+          profiles: nextProfiles,
+          activeProfileId: state.activeProfileId ?? restored.id,
+          storageWarning: null
+        }
+      })
+      return true
+    } catch {
+      return false
+    }
   },
 
   clearStorageWarning: () => set({ storageWarning: null })
 }))
 
-export function getDailyTaskState(profile: ChildProfile, taskId: 'examples' | 'streak' | 'level'): { progress: number; goal: number; complete: boolean; claimed: boolean } {
+export function getDailyTaskState(
+  profile: ChildProfile,
+  taskId: 'examples' | 'streak' | 'level'
+): { progress: number; goal: number; complete: boolean; claimed: boolean } {
   const daily = getDailyProgress(profile)
-  const config = taskId === 'examples'
-    ? { progress: daily.solvedExamples, goal: 5 }
-    : taskId === 'streak'
-      ? { progress: daily.bestStreak, goal: 3 }
-      : { progress: getHighestUnlockedLevel(profile), goal: 10 }
+  const config =
+    taskId === 'examples'
+      ? { progress: daily.solvedExamples, goal: 5 }
+      : taskId === 'streak'
+        ? { progress: daily.bestStreak, goal: 3 }
+        : { progress: getHighestUnlockedLevel(profile), goal: 10 }
   return {
     ...config,
     complete: taskId === 'level' ? config.progress >= config.goal : config.progress >= config.goal,
